@@ -2314,7 +2314,10 @@ def forgot_password():
                     "DELETE FROM resident_password_reset_otps WHERE email = %s",
                     (email,)
                 )
-                flash("Could not send the reset code. Check your email settings.")
+                flash(
+                    "Could not send the reset code. Check the Render email "
+                    "settings and service logs."
+                )
                 return render_template("forgot_password.html")
 
             session["pending_password_reset_email"] = email
