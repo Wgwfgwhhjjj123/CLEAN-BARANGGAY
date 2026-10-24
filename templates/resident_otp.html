@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP | BasuReport</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background: #f0f4f0;
+        }
+
+        .otp-container {
+            width: 90%;
+            max-width: 420px;
+            padding: 30px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 5px 20px #00000015;
+            text-align: center;
+        }
+
+        h1 {
+            color: #247447;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #555;
+            line-height: 1.5;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 18px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            background: #247447;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #195c36;
+        }
+
+        .message {
+            color: #b42318;
+            margin-bottom: 12px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
+            aria-label="Switch to dark mode" aria-pressed="false">
+        <span class="site-theme-icon" aria-hidden="true">☾</span>
+        <span class="site-theme-label">Dark mode</span>
+    </button>
+    <div class="otp-container">
+        <div class="form-icon" aria-hidden="true">✉</div>
+        <h1>BasuReport</h1>
+        <h2>Email verification</h2>
+
+        <p>
+            Enter the 6-digit OTP sent to your email
+            to continue logging in.
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p class="message" role="status">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('verify_resident_otp') }}">
+            <input
+                type="text"
+                name="otp"
+                placeholder="000000"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                minlength="6"
+                autocomplete="one-time-code"
+                required
+            >
+
+            <button type="submit">Verify OTP</button>
+        </form>
+        <a href="/resident-login">← Back to resident login</a>
+    </div>
+    <script src="{{ url_for('static', filename='js/shared_theme.js') }}"></script>
+</body>
+</html>

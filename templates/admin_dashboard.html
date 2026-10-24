@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BasuReport | Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <div class="logo">Basu<span>Report</span></div>
+    <nav class="sidebar-nav" aria-label="Admin dashboard">
+        <a href="#adminTop" class="nav-link active" data-admin-section="dashboard">
+            ▦ Dashboard
+        </a>
+        <a href="#reports" class="nav-link" data-admin-section="reports">
+            ▤ Manage Reports
+        </a>
+    </nav>
+    <section class="sidebar-members" aria-labelledby="sidebarMembersTitle">
+        <div class="sidebar-members-heading">
+            <h2 id="sidebarMembersTitle">Members online</h2>
+            <button type="button" class="member-count" id="memberPresenceToggle"
+                    aria-expanded="true" aria-controls="membersList">
+                <span class="presence-dot" aria-hidden="true"></span>
+                <span id="memberPresenceSummary">Checking...</span>
+            </button>
+        </div>
+        <div class="members-list" id="membersList" aria-live="polite">
+            <p class="members-empty">Loading members...</p>
+        </div>
+    </section>
+    <a href="{{ url_for('logout') }}" class="nav-link logout">↪ Logout</a>
+</aside>
+
+<main class="main" id="adminTop">
+
+<header class="topbar" id="dashboardSection">
+    <h1>Admin Dashboard</h1>
+
+    <div class="topbar-right">
+        <button type="button" class="theme-toggle" id="themeToggle"
+                aria-label="Switch to dark mode" aria-pressed="false">
+            <span aria-hidden="true" id="themeIcon">☾</span>
+            <span id="themeLabel">Dark mode</span>
+        </button>
+
+        <div class="notification-wrapper">
+            <button type="button" class="notification-bell" id="notificationBell" aria-label="Notifications" aria-expanded="false">
+                🔔
+                <span class="notification-badge" id="notificationBadge" style="display:none">0</span>
+            </button>
+
+            <div class="notification-panel" id="notificationPanel">
+                <div class="notification-header">
+                    <h3>Notifications</h3>
+                    <button type="button" class="notification-close-btn"
+                            id="closeNotifications" aria-label="Close notifications">×</button>
+                </div>
+                <div class="notification-actions">
+                    <button type="button" class="mark-all-btn" id="markAllReadBtn">Mark all read</button>
+                    <button type="button" class="delete-all-btn" id="deleteAllNotificationsBtn">Delete all</button>
+                </div>
+                <p class="notification-feedback" id="notificationFeedback"
+                   role="status" aria-live="polite"></p>
+                <div class="notification-list" id="notificationList">
+                    <div class="notification-empty">Loading notifications...</div>
+                </div>
+                <div class="notification-footer">BasuReport Admin Alerts</div>
+            </div>
+        </div>
+
+        <div class="admin-label">Administrator</div>
+    </div>
+</header>
+
+<section class="welcome">
+    <div class="welcome-copy">
+        <span class="welcome-kicker">COMMUNITY CLEANUP OPERATIONS</span>
+        <h2>Good to see  you, Admin!</h2>
+        <p>Review incoming concerns, coordinate cleanup, and keep residents informed.</p>
+        <a href="#reports" class="welcome-action">Review reports <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="welcome-art" aria-hidden="true">
+        <span class="welcome-orbit"></span>
+        <span class="welcome-recycle">♻</span>
+        <span class="welcome-leaf">✳</span>
+    </div>
+    <div class="live-indicator"><span class="live-dot"></span> Live Updates Enabled</div>
+</section>
+
+<div class="action-message" id="actionMessage" role="status" aria-live="polite"></div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            {% if category in ["welcome", "success", "error"] %}
+                <div class="flash-message welcome-toast is-visible
+                            {{ 'is-error' if category == 'error' else '' }}"
+                     role="status" aria-live="polite">
+                    <span class="welcome-toast-icon" aria-hidden="true">
+                        {{ "!" if category == "error" else "✓" }}
+                    </span>
+                    <span class="welcome-toast-content">
+                        <span class="welcome-toast-label">
+                            {{ "BASUREPORT · ADMIN" if category == "welcome" else "ACTION FAILED" if category == "error" else "ACTION COMPLETE" }}
+                        </span>
+                        <span class="welcome-toast-message">{{ message }}</span>
+                    </span>
+                    <button type="button" class="welcome-toast-close"
+                            aria-label="Dismiss notification">×</button>
+                    <span class="welcome-toast-progress" aria-hidden="true"></span>
+                </div>
+            {% else %}
+                <div class="flash-message" role="status">{{ message }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<section class="announcement-section" aria-labelledby="announcement-title">
+    <div class="announcement-heading">
+        <div>
+            <span class="guide-kicker">KEEP YOUR COMMUNITY INFORMED</span>
+            <h2 id="announcement-title">Community announcements</h2>
+            <p>Publish a service update or community notice for resident dashboards.</p>
+        </div>
+        <span class="announcement-icon" aria-hidden="true">📣</span>
+    </div>
+    <form id="announcementForm" class="announcement-form">
+        <label for="announcementTitle">Announcement title</label>
+        <input id="announcementTitle" name="title" maxlength="160"
+               placeholder="e.g. Saturday community cleanup" required>
+        <label for="announcementMessage">Message</label>
+        <textarea id="announcementMessage" name="message" maxlength="2000"
+                  rows="3" placeholder="Share the details residents should know..." required></textarea>
+        <div class="announcement-form-footer">
+            <span>Up to 160 characters for the title and 2,000 for the message.</span>
+            <button type="submit" id="publishAnnouncementBtn">Publish announcement</button>
+        </div>
+        <p class="announcement-feedback" id="announcementFeedback"
+           role="status" aria-live="polite"></p>
+    </form>
+    <div class="announcement-history" id="announcementHistory"
+         aria-live="polite">
+        <p class="announcement-empty">Loading announcements...</p>
+    </div>
+    <p class="announcement-feedback" id="announcementDeleteFeedback"
+       role="status" aria-live="polite"></p>
+</section>
+
+<section class="stats">
+    <div class="stat-card">
+        <h3>Total Reports</h3>
+        <h2 id="totalReports">{{ total_reports }}</h2>
+    </div>
+    <div class="stat-card pending">
+        <h3>Pending Reports</h3>
+        <h2 id="pendingReports">{{ pending_reports }}</h2>
+    </div>
+    <div class="stat-card accepted">
+        <h3>Accepted Reports</h3>
+        <h2 id="acceptedReports">{{ accepted_reports }}</h2>
+    </div>
+    <div class="stat-card progress">
+        <h3>In Progress</h3>
+        <h2 id="inProgressReports">{{ in_progress_reports }}</h2>
+    </div>
+    <div class="stat-card completed">
+        <h3>Completed</h3>
+        <h2 id="completedReports">{{ completed_reports }}</h2>
+    </div>
+    <div class="stat-card urgent">
+        <h3>Urgent Reports</h3>
+        <h2 id="urgentReports">{{ urgent_reports }}</h2>
+    </div>
+    <div class="stat-card rejected">
+        <h3>Rejected Reports</h3>
+        <h2 id="rejectedReports">{{ rejected_reports }}</h2>
+    </div>
+</section>
+
+<section class="operations-guide" aria-labelledby="operations-guide-title">
+    <div class="operations-heading">
+        <div>
+            <span class="guide-kicker">A CONSISTENT CLEANUP WORKFLOW</span>
+            <h2 id="operations-guide-title">From report to resolution</h2>
+            <p>Use each report to guide a clear, safe, and documented response.</p>
+        </div>
+        <span class="operations-mark" aria-hidden="true">✦</span>
+    </div>
+    <div class="workflow-steps">
+        <article class="workflow-step">
+            <span class="step-number">01</span>
+            <div>
+                <h3>Review & prioritize</h3>
+                <p>Check the location, description, photo, and urgency. Contact the resident if details need clarification.</p>
+            </div>
+        </article>
+        <article class="workflow-step">
+            <span class="step-number">02</span>
+            <div>
+                <h3>Coordinate cleanup</h3>
+                <p>Assign the response through your local process and use appropriate precautions for the reported material.</p>
+            </div>
+        </article>
+        <article class="workflow-step">
+            <span class="step-number">03</span>
+            <div>
+                <h3>Document completion</h3>
+                <p>Upload an after-cleaning photo when available and update the status so residents can track progress.</p>
+            </div>
+        </article>
+    </div>
+    <p class="safety-note"><span aria-hidden="true">!</span><span><strong>Safety first:</strong> Do not handle unknown chemicals, medical waste, or sharp materials without the proper trained response.</span></p>
+</section>
+
+<section class="urgent-container">
+    <div class="urgent-header">
+        <h2>🔴 Urgent Reports</h2>
+        <span class="urgent-count" id="urgentCount">{{ urgent_reports }} Urgent</span>
+    </div>
+
+    <div id="urgentList">
+        {% set urgent_found = namespace(value=false) %}
+        {% for report in reports %}
+            {% if report.is_urgent %}
+                {% set urgent_found.value = true %}
+                <div class="urgent-item">
+                    <strong>{{ report.id }}</strong>
+                    <span class="urgent-badge">URGENT</span>
+                    <p>Resident: {{ report.fullname }}</p>
+                    {% if report.phone %}
+                        <p>Phone: {{ report.phone }}</p>
+                    {% endif %}
+                    <p>Location: {{ report.sitio }}</p>
+                    <p>Description: {{ report.description }}</p>
+                    <p>Pending Duration: <strong>{{ report.duration }}</strong></p>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        {% if not urgent_found.value %}
+            <div class="urgent-empty">✓ No urgent reports at the moment.</div>
+        {% endif %}
+    </div>
+</section>
+
+<section class="reports-container" id="reports">
+    <div class="reports-header">
+        <div class="reports-heading">
+            <h2>Manage Reports</h2>
+            <p>Review reported locations, compare photos, and manage cleanup progress.</p>
+        </div>
+        <span class="report-count-label" id="reportCountLabel">{{ total_reports }} Reports</span>
+    </div>
+
+    <div class="report-filters">
+        <div class="filter-group">
+            <label for="statusFilter">Filter by Status</label>
+            <select id="statusFilter" class="filter-control">
+                <option value="all">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Accepted">Accepted</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="urgentFilter">Priority</label>
+            <select id="urgentFilter" class="filter-control">
+                <option value="all">All Reports</option>
+                <option value="urgent">Urgent Only</option>
+                <option value="normal">Normal Only</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="sortFilter">Sort Reports</label>
+            <select id="sortFilter" class="filter-control">
+                <option value="default">Default Order</option>
+                <option value="id-desc">Report ID (Descending)</option>
+                <option value="id-asc">Report ID (Ascending)</option>
+                <option value="urgent-first">Urgent First</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="filter-summary">
+        <span id="filterSummary">Showing all reports</span>
+        <button type="button" class="reset-filters" id="resetFilters">Reset Filters</button>
+    </div>
+
+    <div class="reports-grid" id="reportsGrid">
+        {% for report in reports %}
+        <article class="report-card"
+                 data-report-id="{{ report.id }}"
+                 data-status="{{ report.status }}"
+                 data-urgent="{{ 'urgent' if report.is_urgent else 'normal' }}">
+
+            <div class="report-card-top">
+                <div>
+                    <div class="report-id">REPORT #{{ report.id }}</div>
+                    <div class="report-resident">{{ report.fullname }}</div>
+                    {% if report.phone %}
+                        <div class="report-date">☎ {{ report.phone }}</div>
+                    {% endif %}
+                    <div class="report-date">📅 {{ report.date }}</div>
+                </div>
+
+                <div class="report-badges">
+                    {% if report.status == "Pending" %}
+                        <span class="status pending">Pending</span>
+                    {% elif report.status == "Accepted" %}
+                        <span class="status accepted">Accepted</span>
+                    {% elif report.status == "In Progress" %}
+                        <span class="status progress">In Progress</span>
+                    {% elif report.status == "Rejected" %}
+                        <span class="status rejected">Rejected</span>
+                    {% else %}
+                        <span class="status completed">Completed</span>
+                    {% endif %}
+
+                    {% if report.is_urgent %}
+                        <span class="urgent-badge">🚨 URGENT</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="report-location">📍 <strong>Location:</strong> {{ report.sitio }}</div>
+            <div class="report-description"><strong>Report Description</strong>{{ report.description }}</div>
+
+            <div class="report-photos">
+                <div class="photo-box">
+                    <div class="photo-label before">Before Cleaning</div>
+                    {% if report.image %}
+                        <a href="{{ url_for('uploaded_file', filename=report.image) }}" target="_blank" rel="noopener noreferrer">
+                            <img class="report-photo" src="{{ url_for('uploaded_file', filename=report.image) }}" alt="Original report photo" loading="lazy">
+                        </a>
+                    {% else %}
+                        <div class="photo-missing"><span>📷</span>No original photo</div>
+                    {% endif %}
+                </div>
+
+                <div class="photo-box">
+                    <div class="photo-label after">After Cleaning</div>
+                    {% if report.clean_image %}
+                        <a href="{{ url_for('uploaded_file', filename=report.clean_image) }}" target="_blank" rel="noopener noreferrer">
+                            <img class="report-photo" src="{{ url_for('uploaded_file', filename=report.clean_image) }}" alt="After cleaning photo" loading="lazy">
+                        </a>
+                    {% else %}
+                        <div class="photo-missing">
+                            <span>🧹</span>
+                            {% if report.status == "Completed" %}After photo unavailable{% else %}Not cleaned yet{% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="report-card-footer">
+                <div class="report-footer-details">
+                    <span class="duration-label">⏱ Report Duration</span>
+                    <span class="duration {% if report.is_urgent %}urgent{% endif %}">{{ report.duration }}</span>
+                </div>
+
+                <div class="report-actions">
+                    {% if report.status == "Pending" %}
+                    <div class="report-decision-actions">
+                        <button type="button" class="accept-report-btn"
+                                data-report-action="accept"
+                                data-report-id="{{ report.id }}">✓ Accept</button>
+                        <button type="button" class="reject-report-btn"
+                                data-report-action="reject"
+                                data-report-id="{{ report.id }}">✕ Reject</button>
+                    </div>
+                    {% elif report.status == "Accepted" %}
+                    <form class="start-cleaning-form" action="{{ url_for('start_cleaning', report_id=report.id) }}" method="POST">
+                        <button type="submit" class="action-btn">🧹 Start Cleaning</button>
+                    </form>
+                    {% elif report.status == "In Progress" %}
+                    <form class="complete-report-form" action="{{ url_for('complete_report', report_id=report.id) }}" method="POST" enctype="multipart/form-data">
+                        <label class="upload-label">Upload After-Cleaning Photo</label>
+                        <input type="file" name="clean-image" class="upload-input" accept=".jpg,.jpeg,.png,.gif,.webp" required>
+                        <button type="submit" class="complete-btn">✓ Complete Report</button>
+                    </form>
+                    {% else %}
+                    <span class="completed-label">
+                        {% if report.status == "Rejected" %}✕ Report Rejected{% else %}✓ Cleanup Completed{% endif %}
+                    </span>
+                    {% endif %}
+                    <button type="button" class="report-delete-btn"
+                            data-report-action="delete"
+                            data-report-id="{{ report.id }}">Move to Recently Deleted</button>
+                </div>
+            </div>
+        </article>
+        {% else %}
+        <div class="no-reports">
+            <div class="empty-icon">🗑️</div>
+            <h3>No Reports Yet</h3>
+            <p>Garbage reports submitted by residents will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="last-updated">Last updated: <span id="lastUpdated">Loading...</span></div>
+</section>
+
+<section class="deleted-reports-container" id="deletedReportsContainer"
+         aria-labelledby="deletedReportsTitle">
+    <div class="reports-header">
+        <div class="reports-heading">
+            <h2 id="deletedReportsTitle">Recently Deleted</h2>
+            <p>Deleted reports are kept here and can be restored.</p>
+        </div>
+        <span class="report-count-label" id="deletedReportCount">0 reports</span>
+    </div>
+    <div class="deleted-reports-grid" id="deletedReportsGrid"
+         aria-live="polite">
+        <div class="no-reports">Loading deleted reports...</div>
+    </div>
+</section>
+
+</main>
+
+<div class="photo-modal" id="photoModal" role="dialog" aria-modal="true">
+    <button type="button" id="closePhotoModal" aria-label="Close photo preview">&times;</button>
+    <img id="modalPhoto" src="" alt="Enlarged report photo">
+</div>
+
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+
+</body>
+</html>

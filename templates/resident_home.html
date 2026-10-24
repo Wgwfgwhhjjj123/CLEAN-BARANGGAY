@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resident Dashboard | BasuReport</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/resident_home.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-mark">♻</span>
+            <span>BasuReport</span>
+        </div>
+
+        <div class="profile">
+            <div class="profile-icon">👤</div>
+            <div class="profile-info">
+                <h4>{{ resident_name or "Resident" }}</h4>
+                <p>Community Member</p>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a class="nav-item active" data-page="home" href="#home">
+                <span class="nav-icon">⌂</span> Home
+            </a>
+
+            <a class="nav-item" data-page="report" href="#report">
+                <span class="nav-icon">＋</span> Report Garbage
+            </a>
+
+            <a class="nav-item" data-page="my-reports" href="#my-reports">
+                <span class="nav-icon">▤</span> View My Reports
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a class="nav-item" href="{{ url_for('logout') }}">
+                <span class="nav-icon">↪</span> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <p class="page-label">BasuReport / Resident</p>
+                <h2 id="page-title">Home</h2>
+            </div>
+
+            <div class="top-actions">
+                <button class="dashboard-action theme-toggle" id="theme-toggle"
+                        type="button" aria-label="Switch to dark mode"
+                        aria-pressed="false">
+                    <span class="action-icon" aria-hidden="true">☾</span>
+                    <span class="theme-label">Dark mode</span>
+                </button>
+
+                <div class="notification-wrap">
+                    <button class="dashboard-action notification-toggle"
+                            id="notification-toggle" type="button"
+                            aria-label="Notifications"
+                            aria-expanded="false"
+                            aria-controls="notification-panel">
+                        <svg class="bell-icon" viewBox="0 0 24 24"
+                             aria-hidden="true" fill="none">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                            <path d="M10 21h4" />
+                        </svg>
+                        <span class="notification-count" id="notification-count"
+                              hidden>0</span>
+                    </button>
+
+                    <section class="notification-panel" id="notification-panel"
+                             aria-labelledby="notification-title" hidden>
+                        <div class="notification-panel-header">
+                            <div>
+                                <h3 id="notification-title">Notifications</h3>
+                                <p id="notification-summary">Loading...</p>
+                            </div>
+                            <button class="notification-close" id="notification-close"
+                                    type="button" aria-label="Close notifications">×</button>
+                        </div>
+                        <div class="notification-actions">
+                            <button type="button" id="mark-all-read">Mark all read</button>
+                            <button type="button" id="delete-all-notifications">Delete all</button>
+                        </div>
+                        <p class="notification-feedback" id="notification-feedback"
+                           role="status" aria-live="polite"></p>
+                        <div class="notification-list" id="notification-list">
+                            <p class="notification-empty">Loading notifications...</p>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="top-right">
+                <div class="top-avatar">👤</div>
+                <div class="top-user">
+                    {{ resident_name or "Resident" }}
+                    <small>Resident Account</small>
+                </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- HOME -->
+        <section id="home" class="page-section active">
+
+            <div class="welcome-card">
+                <div class="welcome-text">
+                    <span class="eyebrow">WELCOME TO BASUREPORT</span>
+
+                    <h1>
+                        Hello, <span>{{ resident_name or "Resident" }}!</span>
+                    </h1>
+
+                    <p>
+                        Help keep our community clean and safe.
+                        Submit a garbage concern and track the progress
+                        of your reports here.
+                    </p>
+
+                    <button class="primary-btn" type="button"
+                            onclick="showPage('report')">
+                        + Submit a Report
+                    </button>
+                </div>
+
+                <div class="welcome-art" aria-hidden="true">♻</div>
+            </div>
+
+            <section class="resident-announcements" aria-labelledby="resident-announcements-title">
+                <div class="resident-announcements-heading">
+                    <div>
+                        <span class="eyebrow">FROM YOUR BARANGAY</span>
+                        <h2 id="resident-announcements-title">Community announcements</h2>
+                        <p class="resident-announcements-note">
+                            New announcements stay here for 24 hours, then move to history.
+                        </p>
+                    </div>
+                    <span aria-hidden="true">📣</span>
+                </div>
+                <div class="resident-announcement-list" id="residentAnnouncementList"
+                     aria-live="polite">
+                    <p class="resident-announcement-empty">Loading announcements...</p>
+                </div>
+                <div class="resident-announcement-archive">
+                    <button type="button" class="announcement-history-toggle"
+                            id="announcementHistoryToggle"
+                            aria-expanded="false"
+                            aria-controls="residentAnnouncementHistory">
+                        View announcement history
+                    </button>
+                    <div class="resident-announcement-list announcement-history-list"
+                         id="residentAnnouncementHistory" hidden
+                         aria-live="polite"></div>
+                </div>
+            </section>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-icon">▤</div>
+                    <div>
+                        <p>Total Reports</p>
+                        <h3 id="total-count">{{ reports|length }}</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card pending-stat">
+                    <div class="stat-icon">◷</div>
+                    <div>
+                        <p>Pending</p>
+                        <h3 id="pending-count">
+                            {{ reports|selectattr("status", "equalto", "Pending")|list|length }}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="stat-card progress-stat">
+                    <div class="stat-icon">↻</div>
+                    <div>
+                        <p>In Progress</p>
+                        <h3 id="progress-count">
+                            {{ reports|selectattr("status", "equalto", "In Progress")|list|length }}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="stat-card completed-stat">
+                    <div class="stat-icon">✓</div>
+                    <div>
+                        <p>Completed</p>
+                        <h3 id="completed-count">
+                            {{ reports|selectattr("status", "equalto", "Completed")|list|length }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="section-heading">
+                    <h2>Your report helps the whole barangay 🌱</h2>
+                    <p>
+                        Clear details and a photo help the cleanup team
+                        understand the issue, find it faster, and plan the
+                        right response.
+                    </p>
+                </div>
+
+                <button class="primary-btn" type="button"
+                        onclick="showPage('my-reports')">
+                    View My Reports →
+                </button>
+            </div>
+
+            <section class="waste-guide" aria-labelledby="waste-guide-title">
+                <div class="guide-heading">
+                    <div>
+                        <span class="eyebrow">SMALL HABITS, BIG IMPACT</span>
+                        <h2 id="waste-guide-title">Waste management, made simple</h2>
+                        <p>Everyday choices can reduce litter and keep recyclable materials in use.</p>
+                    </div>
+                    <span class="guide-mark" aria-hidden="true">♻</span>
+                </div>
+
+                <div class="waste-categories">
+                    <article class="waste-category organic">
+                        <span class="category-icon" aria-hidden="true">🍃</span>
+                        <h3>Biodegradable</h3>
+                        <p>Food scraps, fruit peels, leaves, and other compostable organic waste.</p>
+                    </article>
+                    <article class="waste-category recyclable">
+                        <span class="category-icon" aria-hidden="true">↻</span>
+                        <h3>Recyclable</h3>
+                        <p>Clean paper, cardboard, glass, metal cans, and accepted plastic containers.</p>
+                    </article>
+                    <article class="waste-category residual">
+                        <span class="category-icon" aria-hidden="true">◌</span>
+                        <h3>Residual</h3>
+                        <p>Non-recyclable waste that cannot be composted or recovered for reuse.</p>
+                    </article>
+                    <article class="waste-category special">
+                        <span class="category-icon" aria-hidden="true">!</span>
+                        <h3>Special waste</h3>
+                        <p>Batteries, bulbs, electronics, and other items that need careful handling.</p>
+                    </article>
+                </div>
+
+                <div class="reporting-tip">
+                    <span class="tip-icon" aria-hidden="true">✦</span>
+                    <p><strong>Reporting tip</strong> Add a clear landmark, describe the waste, and upload a well-lit photo. Never handle hazardous waste yourself.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- SUBMIT REPORT -->
+        <section id="report" class="page-section">
+            <div class="content-card">
+
+                <div class="section-heading">
+                    <h2>Submit a Garbage Report</h2>
+                    <p>
+                        Provide the details of the concern and upload
+                        a photo to help the community team assess it.
+                    </p>
+                </div>
+
+                <form id="report-form"
+                      action="{{ url_for('submit_report') }}"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    <div class="report-layout">
+                        <div>
+                            <div class="form-group">
+                                <label for="fullname">Full Name</label>
+                                <input type="text" id="fullname"
+                                       name="fullname"
+                                       value="{{ resident_name or '' }}"
+                                       placeholder="Enter your full name"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone"
+                                       placeholder="+63 912 345 6789"
+                                       autocomplete="tel"
+                                       inputmode="tel"
+                                       maxlength="30"
+                                       pattern="[0-9+(). -]{7,30}"
+                                       title="Enter a phone number with 7 to 15 digits."
+                                       required>
+                                <small class="field-hint">
+                                    We'll use this number if the cleanup team needs to follow up.
+                                </small>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="date">Date</label>
+                                    <input type="date" id="date" name="date"
+                                           required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="time">Time</label>
+                                    <input type="time" id="time" name="time"
+                                           required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sitio">Sitio / Location</label>
+                                <input type="text" id="sitio" name="sitio"
+                                       placeholder="Enter your sitio or location"
+                                       required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Description</label>
+                                <textarea id="description" name="description"
+                                          placeholder="Describe the garbage concern and its location..."></textarea>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="form-group">
+                                <label>Photo of the Concern</label>
+
+                                <label class="upload-box" for="garbage-image">
+                                    <div id="upload-placeholder">
+                                        <div class="upload-icon">📷</div>
+                                        <h4>Upload a Photo</h4>
+                                        <p>
+                                            Click here to choose an image
+                                            from your device.
+                                        </p>
+                                    </div>
+
+                                    <img id="image-preview"
+                                         alt="Garbage photo preview">
+
+                                    <input type="file"
+                                           id="garbage-image"
+                                           name="garbage-image"
+                                           accept="image/*"
+                                           required>
+                                </label>
+
+                                <p class="upload-note">
+                                    Supported formats: JPG, PNG, JPEG, WEBP
+                                </p>
+                            </div>
+
+                            <button type="submit" class="primary-btn"
+                                    style="width:100%">
+                                Submit Report →
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- MY REPORTS -->
+        <section id="my-reports" class="page-section">
+            <div class="reports-panel">
+
+                <div class="reports-heading">
+                    <div>
+                        <h2>My Reports</h2>
+                        <p>
+                            View your submitted reports, check their status,
+                            and open a report for more information.
+                        </p>
+                    </div>
+
+                    <span class="report-total-label">
+                        {{ reports|length }} report(s)
+                    </span>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            {% if category == "report_success" %}
+                                <div class="flash-message report-success-toast is-visible"
+                                     role="status" aria-live="polite">
+                                    <span class="report-toast-icon" aria-hidden="true">✓</span>
+                                    <span class="report-toast-content">
+                                        <span class="report-toast-label">REPORT SUBMITTED</span>
+                                        <span class="report-toast-message">{{ message }}</span>
+                                    </span>
+                                    <button type="button" class="report-toast-close"
+                                            aria-label="Dismiss notification">×</button>
+                                    <span class="report-toast-progress" aria-hidden="true"></span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <div class="report-tools">
+                    <div class="search-box">
+                        <span>⌕</span>
+                        <input type="search" id="report-search"
+                               placeholder="Search ID, location, or description..."
+                               aria-label="Search reports">
+                    </div>
+
+                    <select id="status-filter" aria-label="Filter by status">
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <div class="reports-grid" id="reports-list">
+
+                    {% if reports %}
+                        {% for report in reports %}
+
+                        {% set report_status = report.status or "Pending" %}
+                        {% set normalized_status = report_status|lower %}
+
+                        <article class="report-card"
+                                 data-report-id="{{ report.id }}"
+                                 data-location="{{ report.sitio or '' }}"
+                                 data-description="{{ report.description or '' }}"
+                                 data-date="{{ report.date or '' }}"
+                                 data-time="{{ report.time or '' }}"
+                                 data-status="{{ normalized_status }}"
+                                 data-image="{{ url_for('uploaded_file', filename=report.image) if report.image else '' }}"
+                                 data-phone="{{ report.phone or '' }}"
+                                 data-priority="{{ report.priority or 'Normal' }}"
+                                 data-report-name="{{ report.fullname or resident_name or 'Resident' }}">
+
+                            <div class="report-photo-wrap">
+                                {% if report.image %}
+                                    <img class="report-photo"
+                                         src="{{ url_for('uploaded_file', filename=report.image) }}"
+                                         alt="Photo for report {{ report.id }}"
+                                         loading="lazy"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+
+                                    <div class="photo-placeholder"
+                                         style="display:none">
+                                        <span>📷</span>
+                                        Photo unavailable
+                                    </div>
+                                {% else %}
+                                    <div class="photo-placeholder">
+                                        <span>📷</span>
+                                        No photo available
+                                    </div>
+                                {% endif %}
+
+                                {% if normalized_status == "pending" %}
+                                    <span class="status status-pending">● Pending</span>
+                                {% elif normalized_status == "accepted" %}
+                                    <span class="status status-accepted">✓ Accepted</span>
+                                {% elif normalized_status in ["in progress", "in-progress", "processing"] %}
+                                    <span class="status status-progress">◷ In Progress</span>
+                                {% elif normalized_status in ["completed", "resolved"] %}
+                                    <span class="status status-completed">✓ Completed</span>
+                                {% elif normalized_status == "rejected" %}
+                                    <span class="status status-rejected">✕ Rejected</span>
+                                {% else %}
+                                    <span class="status status-other">{{ report_status }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="report-card-body">
+                                <p class="report-id">#{{ report.id }}</p>
+
+                                <h3>{{ report.sitio or "Garbage Concern" }}</h3>
+
+                                <div class="report-meta">
+                                    <div class="meta-row">
+                                        <span class="meta-icon">⌖</span>
+                                        <span>{{ report.sitio or "Location not provided" }}</span>
+                                    </div>
+
+                                    <div class="meta-row">
+                                        <span class="meta-icon">▦</span>
+                                        <span>
+                                            {{ report.date or "Date not available" }}
+                                            {% if report.time %} · {{ report.time }}{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p class="report-description">
+                                    {{ report.description or "No description provided for this report." }}
+                                </p>
+
+                                <button type="button"
+                                        class="view-details-btn"
+                                        onclick="openReportDetails(this)">
+                                    <span>◉ &nbsp; View Details</span>
+                                    <span>›</span>
+                                </button>
+                                <div class="resident-report-actions">
+                                    {% if normalized_status == "pending" %}
+                                        <button type="button"
+                                                class="resident-report-edit-btn"
+                                                data-report-id="{{ report.id }}">
+                                            Edit Report
+                                        </button>
+                                    {% endif %}
+                                    <button type="button"
+                                            class="resident-report-delete-btn"
+                                            data-report-id="{{ report.id }}">
+                                        Move to Recently Deleted
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+
+                        {% endfor %}
+                    {% endif %}
+
+                    <div id="no-reports" class="empty-state"
+                         {% if reports %}style="display:none"{% endif %}>
+                        <div class="empty-icon">📋</div>
+                        <h3>No Reports Yet</h3>
+                        <p>
+                            You haven't submitted a report yet.
+                            Start by reporting a garbage concern in your area.
+                        </p>
+                        <button type="button" class="primary-btn"
+                                onclick="showPage('report')">
+                            + Submit Your First Report
+                        </button>
+                    </div>
+
+                    <div id="no-matches" class="empty-state"
+                         style="display:none">
+                        <div class="empty-icon">🔎</div>
+                        <h3>No Matching Reports</h3>
+                        <p>
+                            Try another search term or select a different status.
+                        </p>
+                        <button type="button" class="secondary-btn"
+                                onclick="clearReportFilters()">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <section class="resident-deleted-reports" aria-labelledby="resident-deleted-title">
+                <div class="reports-heading">
+                    <div>
+                        <h2 id="resident-deleted-title">Recently Deleted</h2>
+                        <p>Reports you delete are kept here so you can restore them.</p>
+                    </div>
+                    <span class="report-total-label" id="residentDeletedCount">0 report(s)</span>
+                </div>
+                <div class="resident-deleted-list" id="residentDeletedList"
+                     aria-live="polite">
+                    <p class="resident-deleted-empty">Loading deleted reports...</p>
+                </div>
+            </section>
+        </section>
+
+        <footer>
+            © 2026 BasuReport · Report Today, Cleaner Tomorrow.
+        </footer>
+    </main>
+</div>
+
+<!-- REPORT DETAILS MODAL -->
+<div class="modal-backdrop" id="report-modal"
+     role="dialog" aria-modal="true"
+     aria-labelledby="modal-title"
+     onclick="closeModalFromBackdrop(event)">
+
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <h2 id="modal-title">Report Details</h2>
+                <p id="modal-report-id">Report information</p>
+            </div>
+
+            <button class="modal-close" type="button"
+                    aria-label="Close details"
+                    onclick="closeReportDetails()">×</button>
+        </div>
+
+        <div class="modal-body">
+            <img id="modal-photo" class="modal-report-photo"
+                 alt="Report photo" style="display:none">
+
+            <div class="modal-details">
+                <div class="detail-item">
+                    <label>Report ID</label>
+                    <p id="modal-id">—</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Status</label>
+                    <p id="modal-status">—</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Resident</label>
+                    <p id="modal-name">—</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Sitio / Location</label>
+                    <p id="modal-location">—</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Date</label>
+                    <p id="modal-date">—</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Time</label>
+                    <p id="modal-time">—</p>
+                </div>
+
+                <div class="detail-item full-width">
+                    <label>Description</label>
+                    <p id="modal-description">No description provided.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="secondary-btn" type="button"
+                    onclick="closeReportDetails()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop edit-report-backdrop" id="edit-report-modal"
+     role="dialog" aria-modal="true" aria-labelledby="edit-report-title">
+    <div class="modal edit-report-modal">
+        <div class="modal-header">
+            <div>
+                <h2 id="edit-report-title">Edit Report</h2>
+                <p>Only pending reports can be edited.</p>
+            </div>
+            <button class="modal-close" id="close-edit-report"
+                    type="button" aria-label="Close edit form">×</button>
+        </div>
+        <form id="edit-report-form" enctype="multipart/form-data">
+            <div class="edit-report-fields">
+                <label for="edit-fullname">Full Name</label>
+                <input id="edit-fullname" name="fullname" maxlength="150" required>
+
+                <label for="edit-phone">Phone Number</label>
+                <input id="edit-phone" name="phone" type="tel"
+                       inputmode="tel" maxlength="30"
+                       pattern="[0-9+(). -]{7,30}" required>
+
+                <div class="edit-report-date-row">
+                    <div>
+                        <label for="edit-date">Date</label>
+                        <input id="edit-date" name="date" type="date" required>
+                    </div>
+                    <div>
+                        <label for="edit-time">Time</label>
+                        <input id="edit-time" name="time" type="time" required>
+                    </div>
+                </div>
+
+                <label for="edit-sitio">Sitio / Location</label>
+                <input id="edit-sitio" name="sitio" maxlength="255" required>
+
+                <label for="edit-description">Description</label>
+                <textarea id="edit-description" name="description"
+                          maxlength="2000" rows="3"></textarea>
+
+                <label for="edit-priority">Priority</label>
+                <select id="edit-priority" name="priority">
+                    <option value="Normal">Normal</option>
+                    <option value="Urgent">Urgent</option>
+                </select>
+
+                <label for="edit-garbage-image">Replace Photo (optional)</label>
+                <input id="edit-garbage-image" name="garbage-image"
+                       type="file" accept="image/png,image/jpeg,image/gif,image/webp">
+                <p class="edit-report-photo-note">
+                    Leave this empty to keep the current photo.
+                </p>
+            </div>
+            <p class="edit-report-feedback" id="edit-report-feedback"
+               role="status" aria-live="polite"></p>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancel-edit-report"
+                        type="button">Cancel</button>
+                <button class="primary-btn" id="save-edit-report"
+                        type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/resident_home.js') }}"></script>
+
+</body>
+</html>

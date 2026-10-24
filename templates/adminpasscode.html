@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BasuReport | Admin Passcode</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/adminpasscode.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+
+    <main class="page-container">
+
+        <section class="login-card">
+
+            <header class="brand">
+
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/>
+                        <rect x="9" y="10" width="6" height="5" rx="1"/>
+                        <path d="M10 10V8a2 2 0 0 1 4 0v2"/>
+                    </svg>
+                </div>
+
+                <h1>Basu<span>Report</span></h1>
+
+                <p>CLEANER BARANGAY • SAFER COMMUNITY</p>
+
+                <div class="divider"></div>
+
+            </header>
+
+            <div class="form-heading">
+                <h2>Admin Passcode</h2>
+                <p>
+                    Please enter the admin passcode to continue
+                    to the administration dashboard.
+                </p>
+            </div>
+
+            <!-- Admin passcode form -->
+            <form action="{{ url_for('admin_login') }}"
+                  method="POST">
+
+                <label class="input-label" for="admin-passcode">
+                    Enter Passcode
+                </label>
+
+                <div class="input-wrapper">
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.8"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <rect x="4" y="10" width="16" height="11" rx="2"/>
+                        <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                        <path d="M12 14v3"/>
+                    </svg>
+
+                    <input
+                        type="password"
+                        id="admin-passcode"
+                        name="admin_passcode"
+                        placeholder="Enter your passcode"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                </div>
+
+                <button type="submit" class="continue-button">
+                    Continue
+
+                    <svg viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M5 12h14"/>
+                        <path d="m12 5 7 7-7 7"/>
+                    </svg>
+                </button>
+
+            </form>
+
+            <div class="security-note">
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+                    <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/>
+                    <path d="m9 12 2 2 4-4"/>
+                </svg>
+
+                Authorized administrators only
+            </div>
+
+            <footer class="card-footer">
+                <strong>BasuReport</strong><br>
+                Barangay Waste Management System
+            </footer>
+
+        </section>
+
+        <div class="copyright">
+            © 2026 BasuReport. All rights reserved.
+        </div>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/adminpasscode.js') }}"></script>
+
+</body>
+</html>

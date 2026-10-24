@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Login - Clean Barangay</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/resident_login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+
+    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
+            aria-label="Switch to dark mode" aria-pressed="false">
+        <span class="site-theme-icon" aria-hidden="true">☾</span>
+        <span class="site-theme-label">Dark mode</span>
+    </button>
+
+    <div class="login-container">
+
+        <div class="left-panel">
+            <div class="logo">♻</div>
+            <h1>BasuReport</h1>
+            <p>Garbage Reporting System</p>
+            <div class="brand-message">
+                <p>Keep Our Community Clean</p>
+                <p class="brand-caption">Together, small actions make a cleaner and healthier barangay.</p>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <p class="section-label">BASUReport · RESIDENT PORTAL</p>
+            <h2>Resident Login</h2>
+            <p class="subtitle">
+                Welcome! Login to submit garbage reports and track their status.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="login-toast {{ category }}"
+                         role="{{ 'alert' if category == 'error' else 'status' }}"
+                         aria-live="{{ 'assertive' if category == 'error' else 'polite' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            <form action="resident-login" method="POST">
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <div class="forgot-link">
+                    <a href="/forgot-password">
+                        Forgot Password?
+                    </a>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    Login as Resident
+                </button>
+
+            </form>
+
+            <p class="signup-text">
+                Don't have an account?
+                <a href="/signup" class="signup-link">Create Account</a>
+            </p>
+
+<a href="/login" class="back">← Back to Login Options</a>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/shared_theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/resident_login.js') }}"></script>
+
+</body>
+</html>

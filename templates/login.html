@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | BasuReport</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/login.css') }}">
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+
+<body>
+
+    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
+            aria-label="Switch to dark mode" aria-pressed="false">
+        <span class="site-theme-icon" aria-hidden="true">☾</span>
+        <span class="site-theme-label">Dark mode</span>
+    </button>
+
+    <div class="login-container">
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+
+            <div class="logo">♻</div>
+
+            <h1>BasuReport</h1>
+
+            <p>Garbage Reporting System</p>
+
+            <div class="brand-message">
+                <span class="brand-rule"></span>
+                <p class="tagline">
+                    Keep Our Community Clean
+                </p>
+                <p class="brand-caption">
+                    Together, small actions make a cleaner and healthier barangay.
+                </p>
+            </div>
+
+            <span class="brand-orbit brand-orbit-one" aria-hidden="true"></span>
+            <span class="brand-orbit brand-orbit-two" aria-hidden="true"></span>
+            <span class="brand-sparkle" aria-hidden="true">✳</span>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+
+            <p class="section-label">BASUReport · Waste Report</p>
+            <h2>Nice to see you!</h2>
+
+            <p class="description">
+                Choose your account type to continue.
+            </p>
+
+            <!-- ADMIN: OPENS IN A NEW TAB -->
+            <a href="/admin-login"
+               class="role-card"
+               id="adminLink"
+               target="_blank"
+               rel="noopener noreferrer">
+
+                <div class="role-icon">🛡</div>
+
+                <div class="role-info">
+                    <h3>Admin</h3>
+                    <p>
+                        Manage reports and monitor garbage collection.
+                    </p>
+                </div>
+
+                <span class="arrow">›</span>
+
+            </a>
+
+            <!-- RESIDENT: SAME TAB -->
+            <a href="/resident-login" class="role-card">
+
+                <div class="role-icon">👤</div>
+
+                <div class="role-info">
+                    <h3>User / Resident</h3>
+                    <p>
+                        Submit garbage reports and track their status.
+                    </p>
+                </div>
+
+                <span class="arrow">›</span>
+
+            </a>
+
+            <!-- SIGN UP -->
+            <div class="signup-link">
+                <p>Don't have an account?</p>
+                <a href="/signup">Sign Up</a>
+            </div>
+
+            <!-- BACK TO HOME -->
+            <a href="/" class="back">
+                ← Back to Home
+            </a>
+
+            <!-- FOOTER -->
+            <div class="footer">
+                © 2026 BasuReport
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Existing JavaScript -->
+    <script src="{{ url_for('static', filename='js/shared_theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+
+</body>
+</html>
