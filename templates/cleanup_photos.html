@@ -1,0 +1,4 @@
+<section class="cleanup-photos" aria-label="Before and after cleaning">
+  <figure><a href="{{ url_for('uploaded_file', filename=report.image) }}" target="_blank" rel="noopener"><img src="{{ url_for('uploaded_file', filename=report.image) }}" alt="Before cleaning at {{ report.sitio }}" loading="lazy"></a><figcaption>Before cleaning · Resident photo</figcaption></figure>
+  <figure>{% if report.clean_image %}<a href="{{ url_for('uploaded_file', filename=report.clean_image) }}" target="_blank" rel="noopener"><img src="{{ url_for('uploaded_file', filename=report.clean_image) }}" alt="After cleaning at {{ report.sitio }}" loading="lazy"></a>{% else %}<div class="cleanup-awaiting">{{ 'Report was rejected' if report.status == 'Rejected' else 'After photo will appear when cleanup is complete' }}</div>{% endif %}<figcaption>After cleaning · Barangay photo</figcaption></figure>
+</section>

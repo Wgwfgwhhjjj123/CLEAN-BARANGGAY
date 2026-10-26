@@ -1,21 +1,4 @@
 (() => {
-  const root = document.documentElement;
-
-  /* ---- theme ---- */
-  const themeBtn = document.getElementById('theme-toggle');
-  const applyTheme = t => {
-    root.dataset.theme = t;
-    themeBtn.textContent = t === 'dark' ? '☀️' : '🌙';
-    themeBtn.setAttribute('aria-pressed', t === 'dark');
-    themeBtn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-  };
-  applyTheme(root.dataset.theme || 'light');
-  themeBtn.addEventListener('click', () => {
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    try { localStorage.setItem('theme', next); } catch (e) {}
-    applyTheme(next);
-  });
-
   /* ---- mobile sidebar ---- */
   const side = document.getElementById('sidebar'), scrim = document.getElementById('scrim'), menu = document.getElementById('menu-btn');
   const setSide = open => {
@@ -61,13 +44,57 @@
     el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   });
   search.addEventListener('input', apply);
-  document.querySelector('.bell').addEventListener('click', () => {
-    setFilter('pending');
-    document.getElementById('reports').scrollIntoView({
-      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      block: 'start'
-    });
+  const notificationDialog = document.getElementById('admin-notifications');
+  const notificationStatus = document.getElementById('admin-notification-status');
+  const notificationList = document.getElementById('admin-notification-list');
+  const bell = document.querySelector('.bell');
+  async function loadNotifications() {
+    notificationStatus.textContent = 'Loading…';
+    try {
+      const response = await fetch('/api/admin/notifications');
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not load notifications.');
+      notificationStatus.textContent = data.notifications.length ? 'Newest first' : 'No notifications yet.';
+      notificationList.replaceChildren();
+      bell.setAttribute('aria-label', `Notifications, ${data.unread} unread`);
+      const dot = bell.querySelector('.dot');
+      if (dot) dot.hidden = data.unread === 0;
+      data.notifications.forEach(item => {
+        const article = document.createElement('article');
+        article.className = 'admin-notification-item';
+        const title = document.createElement('h3');
+        title.textContent = item.title;
+        const message = document.createElement('p');
+        message.textContent = item.message;
+        const time = document.createElement('time');
+        time.textContent = item.created_at;
+        article.append(title, message, time);
+        if (item.report_id) {
+          const link = document.createElement('a');
+          link.className = 'pill';
+          link.href = '/admin/report/' + encodeURIComponent(item.report_id);
+          link.textContent = 'Open report →';
+          article.append(link);
+        }
+        notificationList.append(article);
+      });
+    } catch (error) { notificationStatus.textContent = error.message || 'Could not load notifications.'; }
+  }
+  document.getElementById('admin-notifications-read').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/admin/notifications/read-all', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not mark notifications read.');
+      await loadNotifications();
+    } catch (error) { notificationStatus.textContent = error.message; }
+    finally { button.disabled = false; }
   });
+  loadNotifications();
+  bell.addEventListener('click', () => { notificationDialog.showModal(); loadNotifications(); });
+  document.getElementById('admin-notifications-close').addEventListener('click', () => notificationDialog.close());
+  notificationDialog.addEventListener('click', event => { if (event.target === notificationDialog) notificationDialog.close(); });
 
   /* ---- calendar (highlights days that have reports) ---- */
   const cal = document.querySelector('.calendar');

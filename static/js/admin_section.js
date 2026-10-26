@@ -1,35 +1,4 @@
 (() => {
-  const root = document.documentElement;
-  const themeButtons = [
-    document.getElementById('theme-toggle'),
-    document.getElementById('theme-toggle-setting')
-  ].filter(Boolean);
-
-  function applyTheme(theme) {
-    const dark = theme === 'dark';
-    root.dataset.theme = dark ? 'dark' : 'light';
-    themeButtons.forEach(button => {
-      button.setAttribute('aria-pressed', String(dark));
-      if (button.id === 'theme-toggle-setting') {
-        button.textContent = dark ? 'Use light mode' : 'Use dark mode';
-      } else {
-        button.textContent = dark ? '☀️' : '🌙';
-        button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-      }
-    });
-  }
-
-  applyTheme(root.dataset.theme || 'light');
-  themeButtons.forEach(button => button.addEventListener('click', () => {
-    const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    try {
-      localStorage.setItem('theme', theme);
-    } catch (error) {
-      console.warn('Unable to save theme preference:', error);
-    }
-    applyTheme(theme);
-  }));
-
   const sidebar = document.getElementById('sidebar');
   const scrim = document.getElementById('scrim');
   const menu = document.getElementById('menu-btn');
@@ -50,6 +19,16 @@
       if (event.key === 'Escape') setSidebarOpen(false);
     });
   }
+
+  const transactionSearch = document.getElementById('transaction-search');
+  transactionSearch?.addEventListener('input', () => {
+    let visible = 0;
+    document.querySelectorAll('[data-transaction-row]').forEach(row => {
+      row.hidden = !row.textContent.toLowerCase().includes(transactionSearch.value.trim().toLowerCase());
+      if (!row.hidden) visible++;
+    });
+    document.getElementById('transactions-empty').hidden = visible > 0;
+  });
 
   const search = document.getElementById('member-search');
   if (search) {

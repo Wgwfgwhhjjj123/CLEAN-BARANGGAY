@@ -6,6 +6,7 @@
 <title>Resident Dashboard | BasuReport</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resident_home.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 
 <body>
@@ -335,7 +336,7 @@
 
                         <div>
                             <div class="form-group">
-                                <label>Photo of the Concern</label>
+                                <label>Before cleaning · Photo of the concern</label>
 
                                 <label class="upload-box" for="garbage-image">
                                     <div id="upload-placeholder">
@@ -507,12 +508,10 @@
                                     {{ report.description or "No description provided for this report." }}
                                 </p>
 
-                                <button type="button"
-                                        class="view-details-btn"
-                                        onclick="openReportDetails(this)">
+                                <a class="view-details-btn" href="{{ url_for('resident_report_detail', report_id=report.id) }}">
                                     <span>◉ &nbsp; View Details</span>
                                     <span>›</span>
-                                </button>
+                                </a>
                                 <div class="resident-report-actions">
                                     {% if normalized_status == "pending" %}
                                         <button type="button"

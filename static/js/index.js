@@ -1,5 +1,4 @@
 (() => {
-  const root = document.documentElement;
 
   /* ---------- Loading screen: hide when page is ready ---------- */
   const loader = document.getElementById('loading-screen');
@@ -10,24 +9,6 @@
   };
   window.addEventListener('load', () => setTimeout(hideLoader, 300));
   setTimeout(hideLoader, 4000); // failsafe
-
-  /* ---------- Dark mode ---------- */
-  const themeBtn = document.getElementById('theme-toggle');
-  function applyTheme(t) {
-    root.dataset.theme = t;
-    if (!themeBtn) return;
-    themeBtn.textContent = t === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-    themeBtn.dataset.icon = t === 'dark' ? '☀️' : '🌙';
-    themeBtn.setAttribute('aria-pressed', t === 'dark');
-    themeBtn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'dark' ? '#121714' : '#2e9e5b');
-  }
-  applyTheme(root.dataset.theme || 'light');
-  themeBtn?.addEventListener('click', () => {
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    try { localStorage.setItem('theme', next); } catch (e) {}
-    applyTheme(next);
-  });
 
   /* ---------- Mobile menu ---------- */
   const menuBtn = document.getElementById('menu-toggle');

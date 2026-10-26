@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const reportModal = document.getElementById('report-modal');
     const editReportModal = document.getElementById('edit-report-modal');
     const editReportForm = document.getElementById('edit-report-form');
-    const themeToggle = document.getElementById('theme-toggle');
     const notificationToggle = document.getElementById('notification-toggle');
     const notificationPanel = document.getElementById('notification-panel');
     const notificationList = document.getElementById('notification-list');
@@ -317,64 +316,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Resident presence update failed:', error);
         }
-    }
-
-    function applyTheme(theme) {
-        const isDark = theme === 'dark';
-        document.body.classList.toggle('dark-mode', isDark);
-
-        if (themeToggle) {
-            const icon = themeToggle.querySelector('.action-icon');
-            const label = themeToggle.querySelector('.theme-label');
-            if (icon) icon.textContent = isDark ? '☀' : '☾';
-            if (label) label.textContent = isDark ? 'Light mode' : 'Dark mode';
-            themeToggle.setAttribute(
-                'aria-label',
-                isDark ? 'Switch to light mode' : 'Switch to dark mode'
-            );
-            themeToggle.setAttribute('aria-pressed', String(isDark));
-        }
-    }
-
-    function initializeTheme() {
-        const themeStorageKey = 'basureport-theme';
-        let savedTheme = 'light';
-        try {
-            const storedTheme = localStorage.getItem(themeStorageKey);
-            const legacyTheme = storedTheme === null
-                ? localStorage.getItem('basureport-resident-theme')
-                : null;
-            savedTheme = storedTheme === null
-                ? legacyTheme || 'light'
-                : storedTheme;
-            if (storedTheme === null && legacyTheme !== null) {
-                localStorage.setItem(themeStorageKey, legacyTheme);
-            }
-        } catch (error) {
-            // Theme still works for this page when storage is unavailable.
-        }
-
-        applyTheme(savedTheme);
-        if (themeToggle) {
-            themeToggle.addEventListener('click', function () {
-                const nextTheme = document.body.classList.contains('dark-mode')
-                    ? 'light'
-                    : 'dark';
-                applyTheme(nextTheme);
-
-                try {
-                    localStorage.setItem(themeStorageKey, nextTheme);
-                } catch (error) {
-                    // Keep the selected theme for this page session.
-                }
-            });
-        }
-
-        window.addEventListener('storage', function (event) {
-            if (event.key === themeStorageKey && event.newValue) {
-                applyTheme(event.newValue);
-            }
-        });
     }
 
     function setNotificationFeedback(message, isError) {
@@ -1019,7 +960,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     (function initializeDashboard() {
-        initializeTheme();
+
         loadNotifications();
         refreshAnnouncements();
         refreshDeletedReports();
