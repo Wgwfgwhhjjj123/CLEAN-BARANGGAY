@@ -4,14 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Report {{ report.id }} | BasuReport</title>
-    <script>
-        try {
-            document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
-        } catch (error) {
-            document.documentElement.dataset.theme = 'light';
-        }
-    </script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 <body>
 <div class="shell">
@@ -22,7 +17,7 @@
             <a href="{{ url_for('admin_reports_page') }}" class="side-link active" aria-current="page"><span class="ico">🗑</span>Reports</a>
             <a href="{{ url_for('admin_residents_page') }}" class="side-link"><span class="ico">👥</span>Residents</a>
             <a href="{{ url_for('admin_feedback_page') }}" class="side-link"><span class="ico">★</span>Feedback</a>
-            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Expected Benefits</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Transactions</a>
             <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link"><span class="ico">◈</span>Development Methodology</a>
             <a href="{{ url_for('admin_settings_page') }}" class="side-link"><span class="ico">⚙</span>Settings</a>
         </nav>
@@ -66,18 +61,8 @@
                     <p>{{ report.description or 'No additional description was provided.' }}</p>
                 </div>
 
-                <div class="report-photos">
-                    <figure>
-                        <img src="{{ url_for('uploaded_file', filename=report.image) }}" alt="Waste reported by resident">
-                        <figcaption>Before cleanup</figcaption>
-                    </figure>
-                    {% if report.clean_image %}
-                    <figure>
-                        <img src="{{ url_for('uploaded_file', filename=report.clean_image) }}" alt="Area after cleanup">
-                        <figcaption>After cleanup</figcaption>
-                    </figure>
-                    {% endif %}
-                </div>
+                {% include 'cleanup_photos.html' %}
+                {% include 'cleanup_feedback.html' %}
 
                 <p class="form-message" id="report-message" role="alert" hidden></p>
                 {% if report.status == 'Pending' %}
@@ -92,7 +77,7 @@
                 {% elif report.status == 'In Progress' %}
                 <form class="report-actions upload-action" action="{{ url_for('complete_report', report_id=report.id) }}" method="post" enctype="multipart/form-data" data-report-action>
                     <label for="clean-image">Upload an after-cleanup photo</label>
-                    <input id="clean-image" name="clean-image" type="file" accept="image/png,image/jpeg,image/gif,image/webp" required>
+                    <input id="clean-image" name="clean-image" type="file" data-image-preview accept="image/png,image/jpeg,image/gif,image/webp" required>
                     <button class="btn" type="submit">Complete report</button>
                 </form>
                 {% endif %}

@@ -8,13 +8,8 @@
     <meta name="theme-color" content="#2e9e5b">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
-    <!-- Apply saved theme BEFORE css loads (prevents white flash) -->
-    <script>
-        document.documentElement.dataset.theme =
-            localStorage.getItem('theme') ||
-            (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 
 <body class="loading">

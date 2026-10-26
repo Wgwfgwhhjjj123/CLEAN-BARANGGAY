@@ -3,15 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{{ {'residents': 'Residents', 'feedback': 'Feedback', 'benefits': 'Expected Benefits', 'methodology': 'Development Methodology', 'settings': 'Settings'}[section] }} | BasuReport</title>
-    <script>
-        try {
-            document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
-        } catch (error) {
-            document.documentElement.dataset.theme = 'light';
-        }
-    </script>
+    <title>{{ {'residents': 'Residents', 'feedback': 'Feedback', 'benefits': 'Transactions', 'methodology': 'Development Methodology', 'settings': 'Settings'}[section] }} | BasuReport</title>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 <body>
 <div class="shell">
@@ -22,7 +17,7 @@
             <a href="{{ url_for('admin_reports_page') }}" class="side-link"><span class="ico">🗑</span>Reports</a>
             <a href="{{ url_for('admin_residents_page') }}" class="side-link{{ ' active' if section == 'residents' }}"{{ ' aria-current="page"' if section == 'residents' }}><span class="ico">👥</span>Residents</a>
             <a href="{{ url_for('admin_feedback_page') }}" class="side-link{{ ' active' if section == 'feedback' }}"{{ ' aria-current="page"' if section == 'feedback' }}><span class="ico">★</span>Feedback</a>
-            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link{{ ' active' if section == 'benefits' }}"{{ ' aria-current="page"' if section == 'benefits' }}><span class="ico">✓</span>Expected Benefits</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link{{ ' active' if section == 'benefits' }}"{{ ' aria-current="page"' if section == 'benefits' }}><span class="ico">✓</span>Transactions</a>
             <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link{{ ' active' if section == 'methodology' }}"{{ ' aria-current="page"' if section == 'methodology' }}><span class="ico">◈</span>Development Methodology</a>
             <a href="{{ url_for('admin_settings_page') }}" class="side-link{{ ' active' if section == 'settings' }}"{{ ' aria-current="page"' if section == 'settings' }}><span class="ico">⚙</span>Settings</a>
         </nav>
@@ -78,38 +73,15 @@
             {% endif %}
             {% elif section == 'feedback' %}
             <h1>Resident feedback</h1>
-            <section class="card section-card empty-state">
-                <span class="empty-icon" aria-hidden="true">★</span>
-                <h2>Feedback isn't collected yet</h2>
-                <p>The current report system does not save resident ratings or comments. Once feedback collection is added, submitted feedback can appear here.</p>
-                <a class="btn" href="{{ url_for('admin_reports_page') }}">Review reports</a>
-            </section>
+            <p class="section-intro">Ratings and comments submitted after completed cleanups.</p>
+            {% for report in reports|sort(attribute='feedback_at', reverse=true) %}<article class="card section-card"><div class="card-head"><h2>{{ report.fullname }} · {{ report.sitio }}</h2><a class="pill" href="{{ url_for('admin_report_detail', report_id=report.id) }}">{{ report.id }} →</a></div>{% include 'cleanup_feedback.html' %}</article>{% else %}<section class="card section-card empty-state"><h2>No feedback yet</h2><p>Resident ratings will appear here after cleanup is completed.</p></section>{% endfor %}
             {% elif section == 'benefits' %}
-            <h1>Expected Benefits</h1>
-            <p class="section-intro">How BasuReport supports residents, barangay staff, and a cleaner community.</p>
-            <section class="benefit-grid" aria-label="Expected benefits">
-                <article class="card info-card">
-                    <span class="info-icon" aria-hidden="true">♟</span>
-                    <h2>Simple community reporting</h2>
-                    <p>Residents can submit waste concerns with a location, description, and photo, making reports easier to understand and review.</p>
-                </article>
-                <article class="card info-card">
-                    <span class="info-icon" aria-hidden="true">▥</span>
-                    <h2>More organized follow-up</h2>
-                    <p>Report statuses help administrators see which issues are pending, accepted, being addressed, completed, or rejected.</p>
-                </article>
-                <article class="card info-card">
-                    <span class="info-icon" aria-hidden="true">◷</span>
-                    <h2>Clearer communication</h2>
-                    <p>Notifications and announcements can keep residents informed as reports are reviewed and community cleanup activities are shared.</p>
-                </article>
-                <article class="card info-card">
-                    <span class="info-icon" aria-hidden="true">♻</span>
-                    <h2>Cleaner shared spaces</h2>
-                    <p>Making concerns visible can encourage timely action and participation in keeping neighborhood spaces clean and healthy.</p>
-                </article>
-            </section>
-            <p class="info-note">These are intended benefits; actual results depend on community participation and timely report follow-up.</p>
+            <h1>Resident–admin transactions</h1><p class="section-intro">Follow each report from resident submission to barangay action and resident feedback. Latest reports appear first.</p>
+            <ol class="cleanup-steps"><li>1. Resident reports</li><li>2. Admin reviews</li><li>3. Team cleans</li><li>4. Resident rates</li></ol>
+            <section class="card section-card"><div class="card-head"><h2>{{ reports|length }} transactions</h2><label><span class="sr-only">Search transactions</span><input type="search" id="transaction-search" placeholder="Search report, resident, location…"></label></div>
+            <div class="table-wrap"><table><thead><tr><th>Report / date</th><th>Resident → Barangay</th><th>Status</th><th>Feedback</th><th>Action</th></tr></thead><tbody>
+            {% for report in reports %}<tr data-transaction-row><td>{{ report.id }}<br><small>{{ report.created_at }}</small></td><td>{{ report.fullname }}<br>{{ report.sitio }}</td><td><span class="status-badge status-{{ report.status|lower|replace(' ', '-') }}">{{ report.status }}</span></td><td>{{ (report.rating|string ~ '/5 ★') if report.rating else 'Awaiting feedback' if report.status == 'Completed' else '—' }}</td><td><a class="pill" href="{{ url_for('admin_report_detail', report_id=report.id) }}">{{ 'Review' if report.status == 'Pending' else 'Manage' }} →</a></td></tr>{% else %}<tr><td colspan="5" class="empty">No reports submitted yet.</td></tr>{% endfor %}
+            </tbody></table></div><p id="transactions-empty" class="empty" hidden>No transactions match your search.</p></section>
             {% elif section == 'methodology' %}
             <h1>Development Methodology</h1>
             <p class="section-intro">An iterative, user-focused approach for building and improving BasuReport.</p>

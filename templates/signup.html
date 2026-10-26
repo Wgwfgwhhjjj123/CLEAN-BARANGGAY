@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 
 <body class="signup-page">
@@ -56,7 +57,7 @@
             {% for message in messages %}
                 {{ message }}
             {% endfor %}
-            
+
         </div>
     {% endif %}
 {% endwith %}
@@ -179,7 +180,7 @@
         © 2026 BasuReport | Building a Cleaner Community
     </footer>
 
-    <script src="{{ url_for('static', filename='js/shared_theme.js') }}"></script>
+
     <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
 
 </body>

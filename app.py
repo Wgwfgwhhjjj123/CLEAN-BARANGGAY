@@ -237,6 +237,14 @@ def init_db():
                     ADD COLUMN deleted_at DATETIME DEFAULT NULL
                 """)
 
+            for name, definition in (
+                ("rating", "TINYINT UNSIGNED DEFAULT NULL"),
+                ("feedback", "TEXT DEFAULT NULL"),
+                ("feedback_at", "DATETIME DEFAULT NULL"),
+            ):
+                if name not in report_columns:
+                    cursor.execute(f"ALTER TABLE reports ADD COLUMN {name} {definition}")
+
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS notifications (
                     id VARCHAR(64) PRIMARY KEY,
@@ -369,6 +377,10 @@ def serialize_report(row):
         "description": row.get("description") or "",
         "image": row["image"],
         "clean_image": row.get("clean_image"),
+        "rating": row.get("rating"),
+        "feedback": row.get("feedback") or "",
+        "feedback_at": (parse_datetime(row.get("feedback_at")).strftime(DATE_FORMAT)
+                        if row.get("feedback_at") else None),
         "priority": row.get("priority") or "Normal",
         "status": row["status"],
         "created_at": created_at.strftime(DATE_FORMAT),
@@ -385,7 +397,7 @@ def serialize_report(row):
 def get_all_reports():
     rows = db_fetchall(
         "SELECT * FROM reports WHERE deleted_at IS NULL "
-        "ORDER BY created_at ASC, id ASC"
+        "ORDER BY created_at DESC, id DESC"
     )
     return [serialize_report(row) for row in rows]
 
@@ -635,7 +647,9 @@ def admin_dashboard():
         "in_progress": sum(r["status"] == "In Progress" for r in source_reports),
         "cleaned": sum(r["status"] == "Completed" for r in source_reports),
         "rejected": sum(r["status"] == "Rejected" for r in source_reports),
-        "avg_rating": None
+        "avg_rating": (round(sum(r["rating"] for r in source_reports if r.get("rating")) /
+                             sum(bool(r.get("rating")) for r in source_reports), 1)
+                       if any(r.get("rating") for r in source_reports) else None)
     }
     admin_name = session.get("admin_name", "Admin")
 
@@ -723,6 +737,7 @@ def admin_feedback_page():
     return render_template(
         "admin_section.html",
         section="feedback",
+        reports=[r for r in get_all_reports() if r.get("rating")],
         admin_name=session.get("admin_name", "Admin")
     )
 
@@ -740,6 +755,7 @@ def admin_settings_page():
 
 
 @app.route("/admin/expected-benefits")
+@app.route("/admin/transactions")
 def admin_expected_benefits_page():
     if not session.get("is_admin"):
         flash("Please log in as admin first.")
@@ -747,6 +763,7 @@ def admin_expected_benefits_page():
     return render_template(
         "admin_section.html",
         section="benefits",
+        reports=get_all_reports(),
         admin_name=session.get("admin_name", "Admin")
     )
 
@@ -1625,6 +1642,71 @@ def resident_home():
     )
 
 
+@app.context_processor
+def feedback_form_token():
+    if "feedback_token" not in session:
+        session["feedback_token"] = secrets.token_urlsafe(32)
+    return {"feedback_token": session["feedback_token"]}
+
+
+@app.route("/resident/report/<report_id>")
+def resident_report_detail(report_id):
+    if "resident_email" not in session:
+        return redirect(url_for("resident_login"))
+    report = get_report_by_id(report_id)
+    if not report or report["email"] != session["resident_email"]:
+        return "Report not found.", 404
+    return render_template("report_detail.html", report=prepare_report(report))
+
+
+@app.route("/api/resident/reports/<report_id>/feedback", methods=["POST"])
+def submit_report_feedback(report_id):
+    email = session.get("resident_email")
+    if not email:
+        return jsonify(success=False, message="Please log in first."), 401
+    expected_token = session.get("feedback_token")
+    if not expected_token or not secrets.compare_digest(
+        request.form.get("feedback_token", "").encode(), expected_token.encode()
+    ):
+        return jsonify(success=False, message="Please reload this page and try again."), 403
+    rating_text = request.form.get("rating", "")
+    feedback = request.form.get("feedback", "").strip()
+    if rating_text not in {"1", "2", "3", "4", "5"} or len(feedback) > 500:
+        return jsonify(success=False, message="Choose 1–5 stars and keep comments within 500 characters."), 400
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            # Lock the row so simultaneous submissions cannot replace a saved rating.
+            cursor.execute("SELECT * FROM reports WHERE report_code = %s AND resident_email = %s "
+                           "AND deleted_at IS NULL FOR UPDATE", (report_id, email))
+            row = cursor.fetchone()
+            if not row:
+                return jsonify(success=False, message="Report not found."), 404
+            if row["status"] != "Completed":
+                return jsonify(success=False, message="Feedback is available after cleanup is completed."), 409
+            if row.get("rating") is not None:
+                return jsonify(success=False, message="Feedback has already been submitted."), 409
+            now = datetime.now().strftime(DATE_FORMAT)
+            cursor.execute("UPDATE reports SET rating = %s, feedback = %s, feedback_at = %s "
+                           "WHERE report_code = %s", (int(rating_text), feedback, now, report_id))
+            cursor.execute("INSERT INTO notifications "
+                           "(id, title, message, type, report_id, created_at, is_read) "
+                           "VALUES (%s, %s, %s, 'feedback', %s, %s, 0)",
+                           (uuid.uuid4().hex, "New resident feedback",
+                            f"Report {report_id} received {rating_text}/5 stars.", report_id, now))
+        connection.commit()
+        return jsonify(success=True, message="Thank you! Your feedback has been sent to the barangay.")
+    except Exception:
+        if connection:
+            connection.rollback()
+        app.logger.exception("Feedback submission failed")
+        return jsonify(success=False, message="Could not save feedback. Please try again."), 500
+    finally:
+        if connection:
+            connection.close()
+
+
 @app.route("/api/resident/reports")
 def resident_reports_api():
     if "resident_email" not in session:
@@ -2050,7 +2132,7 @@ def resident_notifications_api():
             FROM notifications AS n
             INNER JOIN reports AS r ON r.report_code = n.report_id
             WHERE r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
             ORDER BY n.created_at DESC
         """, (session["resident_email"],))
 
@@ -2101,7 +2183,7 @@ def mark_resident_notification_read(notification_id):
             FROM notifications AS n
             INNER JOIN reports AS r ON r.report_code = n.report_id
             WHERE n.id = %s AND r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
             LIMIT 1
         """, (notification_id, session["resident_email"]))
         if not notification:
@@ -2115,7 +2197,7 @@ def mark_resident_notification_read(notification_id):
             INNER JOIN reports AS r ON r.report_code = n.report_id
             SET n.is_read = 1
             WHERE n.id = %s AND r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
         """, (notification_id, session["resident_email"]))
         return jsonify({"success": True})
     except Exception:
@@ -2143,7 +2225,7 @@ def delete_resident_notification(notification_id):
             FROM notifications AS n
             INNER JOIN reports AS r ON r.report_code = n.report_id
             WHERE n.id = %s AND r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
         """, (notification_id, session["resident_email"]))
         return jsonify({"success": True})
     except Exception:
@@ -2168,7 +2250,7 @@ def mark_all_resident_notifications_read():
             INNER JOIN reports AS r ON r.report_code = n.report_id
             SET n.is_read = 1
             WHERE r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
         """, (session["resident_email"],))
         return jsonify({"success": True})
     except Exception:
@@ -2193,7 +2275,7 @@ def delete_all_resident_notifications():
             FROM notifications AS n
             INNER JOIN reports AS r ON r.report_code = n.report_id
             WHERE r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent')
+                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
         """, (session["resident_email"],))
         return jsonify({"success": True})
     except Exception:

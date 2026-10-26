@@ -73,6 +73,7 @@
         }
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 
 <body>
@@ -114,6 +115,6 @@
         </form>
         <a href="/resident-login">← Back to resident login</a>
     </div>
-    <script src="{{ url_for('static', filename='js/shared_theme.js') }}"></script>
+
 </body>
 </html>

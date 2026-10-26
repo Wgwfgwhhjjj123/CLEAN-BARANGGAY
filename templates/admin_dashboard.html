@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Admin Dashboard | BasuReport</title>
     <meta name="theme-color" content="#2e9e5b">
-    <script>
-        document.documentElement.dataset.theme = localStorage.getItem('theme') ||
-            (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    </script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+    {% include 'shared_ux.html' %}
 </head>
 <body>
 
@@ -34,7 +32,7 @@
             <a href="{{ url_for('admin_reports_page') }}" class="side-link"><span class="ico">🗑</span>Reports{% if st.pending %}<span class="count">{{ st.pending }}</span>{% endif %}</a>
             <a href="{{ url_for('admin_residents_page') }}" class="side-link"><span class="ico">👥</span>Residents</a>
             <a href="{{ url_for('admin_feedback_page') }}" class="side-link"><span class="ico">★</span>Feedback</a>
-            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Expected Benefits</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Transactions</a>
             <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link"><span class="ico">◈</span>Development Methodology</a>
             <a href="{{ url_for('admin_settings_page') }}" class="side-link"><span class="ico">⚙</span>Settings</a>
         </nav>
@@ -53,11 +51,12 @@
             </label>
             <div class="top-actions">
                 <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
-                <button class="icon-btn bell" type="button" aria-label="{{ st.pending }} pending reports">🔔{% if st.pending %}<i class="dot"></i>{% endif %}</button>
+                <button class="icon-btn bell" type="button" aria-label="Notifications" aria-controls="admin-notifications" aria-haspopup="dialog">🔔<i class="dot" hidden></i></button>
                 <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
             </div>
         </header>
 
+        <dialog id="admin-notifications" class="notification-dialog" aria-labelledby="admin-notifications-title"><div class="card-head"><h2 id="admin-notifications-title">Latest notifications</h2><button type="button" class="icon-btn" id="admin-notifications-close" aria-label="Close notifications">×</button></div><button type="button" id="admin-notifications-read" class="pill">Mark all read</button><p id="admin-notification-status" role="status"></p><div id="admin-notification-list"></div></dialog>
         <main class="content">
             {% with messages = get_flashed_messages() %}
             {% if messages %}
