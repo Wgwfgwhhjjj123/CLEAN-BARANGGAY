@@ -9,7 +9,10 @@ from werkzeug.utils import secure_filename
 
 import os
 import uuid
-import pymysql
+from database import (
+    get_db_connection, using_postgres, init_postgres_db,
+    otp_upsert_query, INTEGRITY_ERRORS,
+)
 import secrets
 import requests
 from dotenv import load_dotenv
@@ -20,7 +23,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this-secret-key")
 
-UPLOAD_FOLDER = os.path.join(app.root_path, "uploads")
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(app.root_path, "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -109,35 +112,10 @@ If you did not request a password reset, ignore this email.
 # DATABASE CONNECTION
 # ==================================================
 
-def get_db_connection():
-    required = [
-        "MYSQLHOST",
-        "MYSQLUSER",
-        "MYSQLPASSWORD",
-        "MYSQLDATABASE"
-    ]
-    missing = [key for key in required if not os.getenv(key)]
-
-    if missing:
-        raise RuntimeError(
-            "Missing database environment variables: "
-            + ", ".join(missing)
-        )
-
-    return pymysql.connect(
-        host=os.getenv("MYSQLHOST"),
-        port=int(os.getenv("MYSQLPORT", "3306")),
-        user=os.getenv("MYSQLUSER"),
-        password=os.getenv("MYSQLPASSWORD"),
-        database=os.getenv("MYSQLDATABASE"),
-        cursorclass=pymysql.cursors.DictCursor,
-        connect_timeout=10,
-        autocommit=False
-    )
-
-
 def init_db():
-    """Repair users.id and create required tables."""
+    """Create Supabase tables or repair the existing MySQL schema."""
+    if using_postgres():
+        return init_postgres_db()
     connection = get_db_connection()
 
     try:
@@ -729,17 +707,34 @@ def admin_residents_page():
     )
 
 
+def render_report_section(section):
+    try:
+        reports = get_all_reports()
+        if section == "feedback":
+            reports = sorted(
+                (report for report in reports if report.get("rating")),
+                key=lambda report: report.get("feedback_at") or report["created_at"],
+                reverse=True,
+            )
+        page_error = None
+        status_code = 200
+    except Exception:
+        app.logger.exception("Could not load admin %s", section)
+        reports = []
+        page_error = "Unable to load reports right now. Please try again shortly."
+        status_code = 503
+    return render_template(
+        "admin_section.html", section=section, reports=reports,
+        page_error=page_error, admin_name=session.get("admin_name", "Admin"),
+    ), status_code
+
+
 @app.route("/admin/feedback")
 def admin_feedback_page():
     if not session.get("is_admin"):
         flash("Please log in as admin first.")
         return redirect(url_for("admin_login"))
-    return render_template(
-        "admin_section.html",
-        section="feedback",
-        reports=[r for r in get_all_reports() if r.get("rating")],
-        admin_name=session.get("admin_name", "Admin")
-    )
+    return render_report_section("feedback")
 
 
 @app.route("/admin/settings")
@@ -760,24 +755,7 @@ def admin_expected_benefits_page():
     if not session.get("is_admin"):
         flash("Please log in as admin first.")
         return redirect(url_for("admin_login"))
-    return render_template(
-        "admin_section.html",
-        section="benefits",
-        reports=get_all_reports(),
-        admin_name=session.get("admin_name", "Admin")
-    )
-
-
-@app.route("/admin/development-methodology")
-def admin_development_methodology_page():
-    if not session.get("is_admin"):
-        flash("Please log in as admin first.")
-        return redirect(url_for("admin_login"))
-    return render_template(
-        "admin_section.html",
-        section="methodology",
-        admin_name=session.get("admin_name", "Admin")
-    )
+    return render_report_section("benefits")
 
 
 @app.route("/api/admin/reports")
@@ -1434,7 +1412,7 @@ def signup():
             flash("Account created successfully! You can now log in.")
             return redirect(url_for("resident_login"))
 
-        except pymysql.err.IntegrityError:
+        except INTEGRITY_ERRORS:
             flash("Email is already registered.")
         except Exception:
             app.logger.exception("Signup database error")
@@ -1477,16 +1455,7 @@ def resident_login():
         expires_at = now + timedelta(minutes=5)
 
         try:
-            db_execute("""
-                INSERT INTO resident_login_otps
-                    (email, otp_hash, expires_at, attempts, created_at)
-                VALUES (%s, %s, %s, 0, %s)
-                ON DUPLICATE KEY UPDATE
-                    otp_hash = VALUES(otp_hash),
-                    expires_at = VALUES(expires_at),
-                    attempts = 0,
-                    created_at = VALUES(created_at)
-            """, (
+            db_execute(otp_upsert_query("resident_login_otps"), (
                 email,
                 otp_hash,
                 expires_at,
@@ -2193,11 +2162,10 @@ def mark_resident_notification_read(notification_id):
             }), 404
 
         db_execute("""
-            UPDATE notifications AS n
-            INNER JOIN reports AS r ON r.report_code = n.report_id
-            SET n.is_read = 1
-            WHERE n.id = %s AND r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
+            UPDATE notifications SET is_read = 1
+            WHERE id = %s AND report_id IN (
+                SELECT report_code FROM reports WHERE resident_email = %s
+            ) AND type NOT IN ('new_report', 'urgent', 'feedback')
         """, (notification_id, session["resident_email"]))
         return jsonify({"success": True})
     except Exception:
@@ -2221,11 +2189,10 @@ def delete_resident_notification(notification_id):
 
     try:
         db_execute("""
-            DELETE n
-            FROM notifications AS n
-            INNER JOIN reports AS r ON r.report_code = n.report_id
-            WHERE n.id = %s AND r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
+            DELETE FROM notifications
+            WHERE id = %s AND report_id IN (
+                SELECT report_code FROM reports WHERE resident_email = %s
+            ) AND type NOT IN ('new_report', 'urgent', 'feedback')
         """, (notification_id, session["resident_email"]))
         return jsonify({"success": True})
     except Exception:
@@ -2246,11 +2213,10 @@ def mark_all_resident_notifications_read():
 
     try:
         db_execute("""
-            UPDATE notifications AS n
-            INNER JOIN reports AS r ON r.report_code = n.report_id
-            SET n.is_read = 1
-            WHERE r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
+            UPDATE notifications SET is_read = 1
+            WHERE report_id IN (
+                SELECT report_code FROM reports WHERE resident_email = %s
+            ) AND type NOT IN ('new_report', 'urgent', 'feedback')
         """, (session["resident_email"],))
         return jsonify({"success": True})
     except Exception:
@@ -2271,11 +2237,10 @@ def delete_all_resident_notifications():
 
     try:
         db_execute("""
-            DELETE n
-            FROM notifications AS n
-            INNER JOIN reports AS r ON r.report_code = n.report_id
-            WHERE r.resident_email = %s
-                AND n.type NOT IN ('new_report', 'urgent', 'feedback')
+            DELETE FROM notifications
+            WHERE report_id IN (
+                SELECT report_code FROM reports WHERE resident_email = %s
+            ) AND type NOT IN ('new_report', 'urgent', 'feedback')
         """, (session["resident_email"],))
         return jsonify({"success": True})
     except Exception:
@@ -2531,16 +2496,7 @@ def forgot_password():
             now = datetime.now()
             expires_at = now + timedelta(minutes=5)
 
-            db_execute("""
-                INSERT INTO resident_password_reset_otps
-                    (email, otp_hash, expires_at, attempts, created_at)
-                VALUES (%s, %s, %s, 0, %s)
-                ON DUPLICATE KEY UPDATE
-                    otp_hash = VALUES(otp_hash),
-                    expires_at = VALUES(expires_at),
-                    attempts = 0,
-                    created_at = VALUES(created_at)
-            """, (email, otp_hash, expires_at, now))
+            db_execute(otp_upsert_query("resident_password_reset_otps"), (email, otp_hash, expires_at, now))
 
             try:
                 send_password_reset_email(email, otp)
@@ -2688,12 +2644,14 @@ def test_db():
         connection = get_db_connection()
 
         with connection.cursor() as cursor:
-            cursor.execute("SELECT DATABASE() AS db_name")
+            cursor.execute("SELECT current_database() AS db_name" if using_postgres()
+                           else "SELECT DATABASE() AS db_name")
             result = cursor.fetchone()
 
         return jsonify({
             "success": True,
-            "message": "Connected to MySQL successfully!",
+            "message": "Connected to database successfully!",
+            "backend": "postgresql" if using_postgres() else "mysql",
             "database": result["db_name"]
         })
 
@@ -2727,5 +2685,5 @@ if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
         port=int(os.getenv("PORT", "5000")),
-        debug=os.getenv("FLASK_DEBUG", "1") == "1"
+        debug=os.getenv("FLASK_DEBUG", "0") == "1"
     )
