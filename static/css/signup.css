@@ -130,6 +130,63 @@ header {
     transition: 0.3s;
 }
 
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-input-wrapper input {
+    padding-right: 48px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #718477;
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.password-toggle:hover {
+    background: #eaf3eb;
+    color: #247a43;
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid #299653;
+    outline-offset: 2px;
+}
+
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+
+.password-toggle .eye-off-icon,
+.password-toggle[aria-pressed="true"] .eye-icon {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .eye-off-icon {
+    display: block;
+}
+
 .form-group input:focus {
     border-color: #299653;
     background: #ffffff;

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Report {{ report.id }} | BasuReport</title>
+    <script>
+        try {
+            document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
+        } catch (error) {
+            document.documentElement.dataset.theme = 'light';
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
+        <a href="{{ url_for('admin_dashboard') }}" class="brand">♻ Basu<span>Report</span></a>
+        <nav>
+            <a href="{{ url_for('admin_dashboard') }}" class="side-link"><span class="ico">▦</span>Dashboard</a>
+            <a href="{{ url_for('admin_reports_page') }}" class="side-link active" aria-current="page"><span class="ico">🗑</span>Reports</a>
+            <a href="{{ url_for('admin_residents_page') }}" class="side-link"><span class="ico">👥</span>Residents</a>
+            <a href="{{ url_for('admin_feedback_page') }}" class="side-link"><span class="ico">★</span>Feedback</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Expected Benefits</a>
+            <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link"><span class="ico">◈</span>Development Methodology</a>
+            <a href="{{ url_for('admin_settings_page') }}" class="side-link"><span class="ico">⚙</span>Settings</a>
+        </nav>
+        <a href="{{ url_for('logout') }}" class="side-link logout"><span class="ico">⎋</span>Log out</a>
+    </aside>
+
+    <div class="scrim" id="scrim"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+            <a class="pill" href="{{ url_for('admin_reports_page') }}">← All reports</a>
+            <div class="top-actions">
+                <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
+                <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
+            </div>
+        </header>
+
+        <main class="content report-content">
+            <p class="section-intro">Report details and cleanup workflow</p>
+            <section class="card section-card">
+                <div class="report-heading">
+                    <div>
+                        <p class="eyebrow">Report</p>
+                        <h1>{{ report.id }}</h1>
+                    </div>
+                    <span class="status-badge status-{{ report.status|lower|replace(' ', '-') }}">{{ report.status }}</span>
+                </div>
+
+                <dl class="report-details">
+                    <div><dt>Resident</dt><dd>{{ report.fullname }}</dd></div>
+                    <div><dt>Email</dt><dd><a href="mailto:{{ report.email }}">{{ report.email }}</a></dd></div>
+                    <div><dt>Contact number</dt><dd>{{ report.phone or 'Not provided' }}</dd></div>
+                    <div><dt>Location</dt><dd>{{ report.sitio }}</dd></div>
+                    <div><dt>Reported</dt><dd>{{ report.created_at }}</dd></div>
+                    <div><dt>Priority</dt><dd>{{ report.priority }}</dd></div>
+                </dl>
+
+                <div class="report-description">
+                    <h2>Description</h2>
+                    <p>{{ report.description or 'No additional description was provided.' }}</p>
+                </div>
+
+                <div class="report-photos">
+                    <figure>
+                        <img src="{{ url_for('uploaded_file', filename=report.image) }}" alt="Waste reported by resident">
+                        <figcaption>Before cleanup</figcaption>
+                    </figure>
+                    {% if report.clean_image %}
+                    <figure>
+                        <img src="{{ url_for('uploaded_file', filename=report.clean_image) }}" alt="Area after cleanup">
+                        <figcaption>After cleanup</figcaption>
+                    </figure>
+                    {% endif %}
+                </div>
+
+                <p class="form-message" id="report-message" role="alert" hidden></p>
+                {% if report.status == 'Pending' %}
+                <form class="report-actions" data-decision-form action="{{ url_for('decide_report', report_id=report.id) }}" method="post">
+                    <button class="btn" type="submit" name="decision" value="accept">Accept report</button>
+                    <button class="btn danger-btn" type="submit" name="decision" value="reject">Reject report</button>
+                </form>
+                {% elif report.status == 'Accepted' %}
+                <form class="report-actions" action="{{ url_for('start_cleaning', report_id=report.id) }}" method="post" data-report-action>
+                    <button class="btn" type="submit">Start cleanup</button>
+                </form>
+                {% elif report.status == 'In Progress' %}
+                <form class="report-actions upload-action" action="{{ url_for('complete_report', report_id=report.id) }}" method="post" enctype="multipart/form-data" data-report-action>
+                    <label for="clean-image">Upload an after-cleanup photo</label>
+                    <input id="clean-image" name="clean-image" type="file" accept="image/png,image/jpeg,image/gif,image/webp" required>
+                    <button class="btn" type="submit">Complete report</button>
+                </form>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/admin_section.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin_report.js') }}"></script>
+</body>
+</html>

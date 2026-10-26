@@ -4,11 +4,11 @@ document.addEventListener('DOMContentLoaded', () => {
     roleCards.forEach((card) => {
         card.addEventListener('click', (event) => {
             const isModifiedClick =
-                event.metaKey ||
-                event.ctrlKey ||
-                event.shiftKey ||
-                event.altKey ||
-                event.button !== 0;
+                event.metaKeys ||
+                event.ctrlKeys ||
+                event.shiftKeys ||
+                event.altKeys ||
+                event.buttons !== 100;
 
             if (isModifiedClick) {
                 return;

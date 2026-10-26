@@ -572,40 +572,194 @@ def admin_login():
 # ==================================================
 
 @app.route("/admin-dashboard")
+@app.route("/admin/dashboard")
 def admin_dashboard():
     if not session.get("is_admin"):
         flash("Please log in as admin first.")
         return redirect(url_for("admin_login"))
     try:
-        reports = [prepare_report(r) for r in get_all_reports()]
-        counts = get_dashboard_counts()
-        notification_counts = get_notification_counts()
+        source_reports = [prepare_report(r) for r in get_all_reports()]
     except Exception:
         app.logger.exception("Admin dashboard database error")
         flash("Could not load dashboard. Check the database connection.")
-        reports = []
-        counts = {
-            "total_reports": 0,
-            "pending_reports": 0,
-            "accepted_reports": 0,
-            "in_progress_reports": 0,
-            "completed_reports": 0,
-            "rejected_reports": 0,
-            "urgent_reports": 0
-        }
-        notification_counts = {"total": 0, "unread": 0}
+        source_reports = []
+
+    try:
+        announcement_rows = db_fetchall("""
+            SELECT id, title, message, created_at
+            FROM announcements
+            ORDER BY created_at DESC
+            LIMIT 20
+        """)
+        announcements = [{
+            "id": row["id"],
+            "title": row["title"],
+            "message": row["message"],
+            "created_at": parse_datetime(row["created_at"]),
+            "pinned": False
+        } for row in announcement_rows]
+    except Exception:
+        app.logger.exception("Admin dashboard announcements database error")
+        flash("Could not load announcements.")
+        announcements = []
+
+    status_keys = {
+        "Pending": "pending",
+        "Accepted": "accepted",
+        "In Progress": "in_progress",
+        "Completed": "completed",
+        "Rejected": "rejected"
+    }
+    reports = []
+    report_dates = set()
+    source_reports.sort(
+        key=lambda report: parse_datetime(report["created_at"]),
+        reverse=True
+    )
+    for report in source_reports:
+        created_at = datetime.strptime(report["created_at"], DATE_FORMAT)
+        report_dates.add(created_at.strftime("%Y-%m-%d"))
+        reports.append({
+            **report,
+            "location": report["sitio"],
+            "category": report.get("priority") or "Waste report",
+            "created_at_display": created_at.strftime("%b %d, %I:%M %p"),
+            "status_key": status_keys.get(report["status"], "unknown"),
+        })
+
+    total = len(source_reports)
+    stats = {
+        "total": total,
+        "pending": sum(r["status"] == "Pending" for r in source_reports),
+        "accepted": sum(r["status"] == "Accepted" for r in source_reports),
+        "in_progress": sum(r["status"] == "In Progress" for r in source_reports),
+        "cleaned": sum(r["status"] == "Completed" for r in source_reports),
+        "rejected": sum(r["status"] == "Rejected" for r in source_reports),
+        "avg_rating": None
+    }
+    admin_name = session.get("admin_name", "Admin")
 
     return render_template(
         "admin_dashboard.html",
         reports=reports,
-        total_reports=counts["total_reports"],
-        pending_reports=counts["pending_reports"],
-        accepted_reports=counts["accepted_reports"],
-        in_progress_reports=counts["in_progress_reports"],
-        completed_reports=counts["completed_reports"],
-        rejected_reports=counts["rejected_reports"],
-        urgent_reports=counts["urgent_reports"],
-        notification_counts=notification_counts
+        announcements=announcements,
+        stats=stats,
+        report_dates=sorted(report_dates),
+        admin_name=admin_name
+    )
+
+
+@app.route("/admin/reports")
+def admin_reports_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    return redirect(url_for("admin_dashboard") + "#reports")
+
+
+@app.route("/admin/report/<report_id>")
+def admin_report_detail(report_id):
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    try:
+        report = get_report_by_id(report_id)
+    except Exception:
+        app.logger.exception("Admin report detail database error")
+        flash("Could not load this report. Check the database connection.")
+        return redirect(url_for("admin_dashboard"))
+    if report is None:
+        flash("Report not found.")
+        return redirect(url_for("admin_dashboard"))
+    return render_template(
+        "admin_report.html",
+        report=prepare_report(report),
+        admin_name=session.get("admin_name", "Admin")
+    )
+
+
+@app.route("/admin/residents")
+def admin_residents_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    try:
+        members = db_fetchall("""
+            SELECT fullname, email, last_seen_at
+            FROM users
+            ORDER BY fullname ASC
+        """)
+        now = datetime.now()
+        for member in members:
+            last_seen = parse_datetime(member.get("last_seen_at"))
+            member["online"] = bool(
+                last_seen and (now - last_seen).total_seconds() <= 120
+            )
+            member["last_seen_display"] = (
+                last_seen.strftime("%b %d, %Y %I:%M %p")
+                if last_seen else "Not active yet"
+            )
+    except Exception:
+        app.logger.exception("Admin residents page database error")
+        return render_template(
+            "admin_section.html",
+            section="residents",
+            admin_name=session.get("admin_name", "Admin"),
+            page_error="Could not load residents. Check the database connection."
+        ), 503
+    return render_template(
+        "admin_section.html",
+        section="residents",
+        admin_name=session.get("admin_name", "Admin"),
+        members=members
+    )
+
+
+@app.route("/admin/feedback")
+def admin_feedback_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    return render_template(
+        "admin_section.html",
+        section="feedback",
+        admin_name=session.get("admin_name", "Admin")
+    )
+
+
+@app.route("/admin/settings")
+def admin_settings_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    return render_template(
+        "admin_section.html",
+        section="settings",
+        admin_name=session.get("admin_name", "Admin")
+    )
+
+
+@app.route("/admin/expected-benefits")
+def admin_expected_benefits_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    return render_template(
+        "admin_section.html",
+        section="benefits",
+        admin_name=session.get("admin_name", "Admin")
+    )
+
+
+@app.route("/admin/development-methodology")
+def admin_development_methodology_page():
+    if not session.get("is_admin"):
+        flash("Please log in as admin first.")
+        return redirect(url_for("admin_login"))
+    return render_template(
+        "admin_section.html",
+        section="methodology",
+        admin_name=session.get("admin_name", "Admin")
     )
 
 
@@ -2475,7 +2629,7 @@ def test_db():
 
 # ==================================================
 # RUN APP
-# ==================================================
+# ==================================================python app.py
 
 # Create/repair tables on startup (also runs under gunicorn on Render).
 try:

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ {'residents': 'Residents', 'feedback': 'Feedback', 'benefits': 'Expected Benefits', 'methodology': 'Development Methodology', 'settings': 'Settings'}[section] }} | BasuReport</title>
+    <script>
+        try {
+            document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
+        } catch (error) {
+            document.documentElement.dataset.theme = 'light';
+        }
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
+</head>
+<body>
+<div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
+        <a href="{{ url_for('admin_dashboard') }}" class="brand">♻ Basu<span>Report</span></a>
+        <nav>
+            <a href="{{ url_for('admin_dashboard') }}" class="side-link"><span class="ico">▦</span>Dashboard</a>
+            <a href="{{ url_for('admin_reports_page') }}" class="side-link"><span class="ico">🗑</span>Reports</a>
+            <a href="{{ url_for('admin_residents_page') }}" class="side-link{{ ' active' if section == 'residents' }}"{{ ' aria-current="page"' if section == 'residents' }}><span class="ico">👥</span>Residents</a>
+            <a href="{{ url_for('admin_feedback_page') }}" class="side-link{{ ' active' if section == 'feedback' }}"{{ ' aria-current="page"' if section == 'feedback' }}><span class="ico">★</span>Feedback</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link{{ ' active' if section == 'benefits' }}"{{ ' aria-current="page"' if section == 'benefits' }}><span class="ico">✓</span>Expected Benefits</a>
+            <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link{{ ' active' if section == 'methodology' }}"{{ ' aria-current="page"' if section == 'methodology' }}><span class="ico">◈</span>Development Methodology</a>
+            <a href="{{ url_for('admin_settings_page') }}" class="side-link{{ ' active' if section == 'settings' }}"{{ ' aria-current="page"' if section == 'settings' }}><span class="ico">⚙</span>Settings</a>
+        </nav>
+        <a href="{{ url_for('logout') }}" class="side-link logout"><span class="ico">⎋</span>Log out</a>
+    </aside>
+
+    <div class="scrim" id="scrim"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <button id="menu-btn" class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>
+            <a class="pill" href="{{ url_for('admin_dashboard') }}">← Dashboard</a>
+            <div class="top-actions">
+                <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
+                <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
+            </div>
+        </header>
+
+        <main class="content">
+            {% if section == 'residents' %}
+            <h1>Residents</h1>
+            <p class="section-intro">Registered residents and their recent activity.</p>
+            {% if page_error %}
+            <div class="attention" role="alert">{{ page_error }}</div>
+            {% else %}
+            <section class="card section-card">
+                <div class="card-head">
+                    <h2>{{ members|length }} registered resident{{ '' if members|length == 1 else 's' }}</h2>
+                    <label class="member-search">
+                        <span class="sr-only">Search residents</span>
+                        <input id="member-search" type="search" placeholder="Search name or email">
+                    </label>
+                </div>
+                <div class="table-wrap">
+                    <table class="member-table">
+                        <thead><tr><th>Name</th><th>Email</th><th>Presence</th><th>Last active</th></tr></thead>
+                        <tbody id="member-list">
+                        {% for member in members %}
+                            <tr data-member-row>
+                                <td>{{ member.fullname }}</td>
+                                <td>{{ member.email }}</td>
+                                <td><span class="presence{{ ' online' if member.online }}"><i></i>{{ 'Online' if member.online else 'Offline' }}</span></td>
+                                <td>{{ member.last_seen_display }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="empty">No residents have registered yet.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="empty" id="members-empty" hidden>No residents match your search.</p>
+            </section>
+            {% endif %}
+            {% elif section == 'feedback' %}
+            <h1>Resident feedback</h1>
+            <section class="card section-card empty-state">
+                <span class="empty-icon" aria-hidden="true">★</span>
+                <h2>Feedback isn't collected yet</h2>
+                <p>The current report system does not save resident ratings or comments. Once feedback collection is added, submitted feedback can appear here.</p>
+                <a class="btn" href="{{ url_for('admin_reports_page') }}">Review reports</a>
+            </section>
+            {% elif section == 'benefits' %}
+            <h1>Expected Benefits</h1>
+            <p class="section-intro">How BasuReport supports residents, barangay staff, and a cleaner community.</p>
+            <section class="benefit-grid" aria-label="Expected benefits">
+                <article class="card info-card">
+                    <span class="info-icon" aria-hidden="true">♟</span>
+                    <h2>Simple community reporting</h2>
+                    <p>Residents can submit waste concerns with a location, description, and photo, making reports easier to understand and review.</p>
+                </article>
+                <article class="card info-card">
+                    <span class="info-icon" aria-hidden="true">▥</span>
+                    <h2>More organized follow-up</h2>
+                    <p>Report statuses help administrators see which issues are pending, accepted, being addressed, completed, or rejected.</p>
+                </article>
+                <article class="card info-card">
+                    <span class="info-icon" aria-hidden="true">◷</span>
+                    <h2>Clearer communication</h2>
+                    <p>Notifications and announcements can keep residents informed as reports are reviewed and community cleanup activities are shared.</p>
+                </article>
+                <article class="card info-card">
+                    <span class="info-icon" aria-hidden="true">♻</span>
+                    <h2>Cleaner shared spaces</h2>
+                    <p>Making concerns visible can encourage timely action and participation in keeping neighborhood spaces clean and healthy.</p>
+                </article>
+            </section>
+            <p class="info-note">These are intended benefits; actual results depend on community participation and timely report follow-up.</p>
+            {% elif section == 'methodology' %}
+            <h1>Development Methodology</h1>
+            <p class="section-intro">An iterative, user-focused approach for building and improving BasuReport.</p>
+            <section class="card methodology-card">
+                <ol class="method-steps">
+                    <li><span>1</span><div><h2>Understand the need</h2><p>Identify the reporting and cleanup coordination needs of residents and barangay administrators.</p></div></li>
+                    <li><span>2</span><div><h2>Plan and design</h2><p>Organize requirements into clear user flows, page layouts, and report-status steps before implementation.</p></div></li>
+                    <li><span>3</span><div><h2>Build in small increments</h2><p>Develop related features such as accounts, reports, notifications, and dashboard tools in manageable pieces.</p></div></li>
+                    <li><span>4</span><div><h2>Test the workflows</h2><p>Check page navigation, form validation, access controls, and report state changes, including common error cases.</p></div></li>
+                    <li><span>5</span><div><h2>Review and improve</h2><p>Use testing and user feedback to refine usability, accessibility, and reliability in the next iteration.</p></div></li>
+                </ol>
+                <p class="info-note">This page describes the project’s iterative development approach; it does not represent a formal certification or audit.</p>
+            </section>
+            {% else %}
+            <h1>Settings</h1>
+            <p class="section-intro">Personal display preferences for this browser.</p>
+            <section class="card section-card setting-row">
+                <div>
+                    <h2>Appearance</h2>
+                    <p class="muted-note left">Choose light or dark mode. Your choice is saved in this browser.</p>
+                </div>
+                <button id="theme-toggle-setting" class="btn" type="button" aria-pressed="false">Use dark mode</button>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/admin_section.js') }}"></script>
+</body>
+</html>

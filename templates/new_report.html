@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>New report | BasuReport</title>
+    <meta name="theme-color" content="#2e9e5b">
+    <script>document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<main class="page">
+    <p><a href="/my-reports">← My reports</a></p>
+    <h1>Report waste</h1>
+    <form class="card" method="post" action="/report/submit" enctype="multipart/form-data" data-loading-form>
+        <label for="location">Where is it?</label>
+        <input type="text" id="location" name="location" placeholder="Street, purok, or landmark" required>
+
+        <label for="description">What's the problem?</label>
+        <textarea id="description" name="description" maxlength="1000" required></textarea>
+
+        <label for="before_photo">Photo of the waste (before)</label>
+        <input type="file" id="before_photo" name="before_photo" accept="image/*" capture="environment" required data-preview="#before-preview">
+        <img id="before-preview" class="preview" alt="Preview of your photo">
+
+        <button type="submit" class="primary-btn block">Submit report</button>
+    </form>
+</main>
+<script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+</body>
+</html>

@@ -1,19 +1,27 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>BasuReport | Report Waste, Create Change</title>
+    <meta name="description" content="Report garbage concerns in your barangay and track the cleanup.">
+    <meta name="theme-color" content="#2e9e5b">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
+    <!-- Apply saved theme BEFORE css loads (prevents white flash) -->
+    <script>
+        document.documentElement.dataset.theme =
+            localStorage.getItem('theme') ||
+            (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 </head>
 
 <body class="loading">
+    <a href="#main" class="skip-link">Skip to content</a>
 
     <!-- LOADING SCREEN -->
-    <div id="loading-screen">
+    <div id="loading-screen" role="status" aria-live="polite">
         <div class="loader-debris" aria-hidden="true">
             <span class="debris debris-bottle">♻</span>
             <span class="debris debris-can">🥫</span>
@@ -23,174 +31,112 @@
         </div>
         <div class="loader-logo">♻ Basu<span>Report</span></div>
         <p class="loader-text">Preparing a cleaner community...</p>
-
-        <div class="progress-container">
-            <div class="progress-bar"></div>
-        </div>
-
+        <div class="progress-container"><div class="progress-bar"></div></div>
         <p class="loading-percent">LOADING...</p>
     </div>
 
     <!-- NAVIGATION -->
     <header class="navbar">
-
         <a href="#home" class="logo" aria-label="BasuReport Home">
             <span class="logo-icon">♻</span>
             <span>Basu<span>Report</span></span>
         </a>
 
-        <nav aria-label="Main navigation">
+        <nav aria-label="Main navigation" id="main-nav">
             <ul class="nav-links">
                 <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#how" class="nav-link">How it works</a></li>
                 <li><a href="#about" class="nav-link">About</a></li>
             </ul>
         </nav>
 
         <div class="nav-actions">
-            <button
-                id="theme-toggle"
-                type="button"
-                aria-label="Switch to dark mode"
-                aria-pressed="false"
-            >
+            <button id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
                 🌙 Dark Mode
             </button>
-
-            <a href="/login" class="login-btn page-transition">
-                Login <span aria-hidden="true">→</span>
-            </a>
+            <a href="/login" class="login-btn page-transition">Login <span aria-hidden="true">→</span></a>
+            <button id="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="main-nav">☰</button>
         </div>
-
     </header>
 
-    <!-- MAIN CONTENT -->
-    <main>
+    <main id="main">
 
+        <!-- HERO -->
         <section class="hero" id="home">
             <div class="hero-content">
-
                 <p class="eyebrow">A cleaner community starts here</p>
-
-                <h1>
-                    Report Waste.<br>
-                    <span>Create Change.</span>
-                </h1>
-
+                <h1>Report Waste.<br><span>Create Change.</span></h1>
                 <p class="hero-description">
-                    Help keep your community clean and safe.
-                    BasuReport makes it easier to report waste concerns
-                    and take part in building a cleaner, greener,
+                    Help keep your community clean and safe. BasuReport makes it easier
+                    to report waste concerns and take part in building a cleaner, greener,
                     and healthier barangay.
                 </p>
-
                 <div class="hero-actions">
-                    <a href="/login" class="primary-btn page-transition">
-                        Get Started <span aria-hidden="true">→</span>
-                    </a>
-
-                    <a href="#about" class="text-link">
-                        Discover BasuReport
-                        <span aria-hidden="true">↗</span>
-                    </a>
+                    <a href="/login" class="primary-btn page-transition">Report waste <span aria-hidden="true">→</span></a>
+                    <a href="/login?next=/my-reports" class="secondary-btn page-transition">Track my report</a>
+                    <a href="#about" class="text-link">Discover BasuReport <span aria-hidden="true">↗</span></a>
                 </div>
 
+                <!-- Pass `stats` from Flask: {total, cleaned, avg_rating}. Safe if missing. -->
+                <dl class="stats">
+                    <div><dt>Reports submitted</dt><dd data-count="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</dd></div>
+                    <div><dt>Cleaned up</dt><dd data-count="{{ stats.cleaned if stats else 0 }}">{{ stats.cleaned if stats else 0 }}</dd></div>
+                    <div><dt>Average rating</dt><dd>{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
+                </dl>
             </div>
         </section>
 
-        <!-- ABOUT SECTION -->
+        <!-- HOW IT WORKS (a real sequence, so numbered) -->
+        <section class="how" id="how">
+            <div class="section-inner">
+                <p class="section-label">How it works</p>
+                <h2>From report to clean street in four steps</h2>
+                <ol class="steps">
+                    <li class="reveal"><span class="step-no">1</span><h3>Snap a photo</h3><p>Take a "before" photo of the waste and describe where it is.</p></li>
+                    <li class="reveal"><span class="step-no">2</span><h3>Submit your report</h3><p>Your barangay admin receives it right away.</p></li>
+                    <li class="reveal"><span class="step-no">3</span><h3>Admin cleans up</h3><p>After the cleanup, the admin uploads an "after" photo.</p></li>
+                    <li class="reveal"><span class="step-no">4</span><h3>Rate the result</h3><p>Compare before and after, then leave a rating and feedback.</p></li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- ABOUT -->
         <section class="about" id="about">
             <div class="about-container">
-
                 <div class="about-visual reveal">
-                    <img
-                        src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1000&q=85"
-                        alt="Nature and the environment"
-                        loading="lazy"
-                    >
-
+                    <img src="https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1000&q=85"
+                         alt="Nature and the environment" loading="lazy" width="1000" height="667">
                     <div class="about-badge">
                         <strong>Report Waste, Create Change.</strong>
-                        <span>
-                            Small actions can help build a cleaner
-                            and healthier community.
-                        </span>
+                        <span>Small actions can help build a cleaner and healthier community.</span>
                     </div>
                 </div>
 
                 <div class="about-content">
-
                     <p class="section-label">About BasuReport</p>
-
-                    <h2>
-                        Working Together for a
-                        <span>Cleaner Future.</span>
-                    </h2>
-
+                    <h2>Working Together for a <span>Cleaner Future.</span></h2>
                     <p class="about-description">
-                        BasuReport is a community-focused waste reporting
-                        platform designed to make reporting garbage concerns
-                        easier and more accessible. It helps residents
-                        participate in keeping their surroundings clean
-                        and encourages collective responsibility for
-                        a healthier environment.
+                        BasuReport is a community-focused waste reporting platform designed to make
+                        reporting garbage concerns easier and more accessible. It helps residents
+                        participate in keeping their surroundings clean and encourages collective
+                        responsibility for a healthier environment.
                     </p>
-
                     <div class="about-points">
-
-                        <div class="about-point">
-                            <div class="point-icon">♻</div>
-                            <div>
-                                <h3>Easy Waste Reporting</h3>
-                                <p>
-                                    Give residents a convenient way to
-                                    report garbage concerns in their area.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="about-point">
-                            <div class="point-icon">✓</div>
-                            <div>
-                                <h3>Community Participation</h3>
-                                <p>
-                                    Encourage everyone to take part in
-                                    creating a cleaner neighborhood.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="about-point">
-                            <div class="point-icon">🌿</div>
-                            <div>
-                                <h3>A Greener Tomorrow</h3>
-                                <p>
-                                    Support environmental awareness through
-                                    responsible waste reporting.
-                                </p>
-                            </div>
-                        </div>
-
+                        <div class="about-point"><div class="point-icon">♻</div><div><h3>Easy Waste Reporting</h3><p>Give residents a convenient way to report garbage concerns in their area.</p></div></div>
+                        <div class="about-point"><div class="point-icon">✓</div><div><h3>Community Participation</h3><p>Encourage everyone to take part in creating a cleaner neighborhood.</p></div></div>
+                        <div class="about-point"><div class="point-icon">🌿</div><div><h3>A Greener Tomorrow</h3><p>Support environmental awareness through responsible waste reporting.</p></div></div>
                     </div>
                 </div>
-
             </div>
         </section>
-
     </main>
 
-    <!-- FOOTER -->
     <footer>
-        <p>
-            © 2026
-            <span class="footer-brand">Basu<span>Report</span></span>
-            | Building a Cleaner Community
-        </p>
-
+        <p>© 2026 <span class="footer-brand">Basu<span>Report</span></span> | Building a Cleaner Community</p>
         <a href="#home" class="section-link">Back to top ↑</a>
     </footer>
 
-    <!-- JAVASCRIPT -->
+    <noscript><style>#loading-screen{display:none}body.loading{overflow:auto}</style></noscript>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-
 </body>
 </html>

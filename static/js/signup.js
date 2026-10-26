@@ -13,6 +13,21 @@ document.addEventListener('DOMContentLoaded', function () {
         '.password-requirements [data-rule]'
     );
 
+    document.querySelectorAll('[data-password-toggle]').forEach(function (toggle) {
+        const input = document.getElementById(toggle.getAttribute('aria-controls'));
+        if (!input) return;
+
+        toggle.addEventListener('click', function () {
+            const isVisible = input.type === 'text';
+            input.type = isVisible ? 'password' : 'text';
+            toggle.setAttribute('aria-pressed', String(!isVisible));
+            toggle.setAttribute(
+                'aria-label',
+                isVisible ? 'Show password' : 'Hide password'
+            );
+        });
+    });
+
     function getPasswordRules(password) {
         return {
             length: password.length >= 8,

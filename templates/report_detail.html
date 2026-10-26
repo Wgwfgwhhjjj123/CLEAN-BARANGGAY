@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Report #{{ report.id }} | BasuReport</title>
+    <meta name="theme-color" content="#2e9e5b">
+    <script>document.documentElement.dataset.theme = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+<main class="page">
+    <p><a href="{{ '/admin/reports' if is_admin else '/my-reports' }}">← Back to reports</a></p>
+    <h1>Report #{{ report.id }}
+        <span class="badge badge-{{ report.status }}">{{ 'Cleaned' if report.status == 'cleaned' else 'Pending' }}</span>
+    </h1>
+    <p class="muted">{{ report.location }}</p>
+    <p>{{ report.description }}</p>
+
+    <!-- BEFORE / AFTER (shared by resident and admin) -->
+    <section class="before-after" aria-label="Before and after photos">
+        <figure>
+            <img src="{{ url_for('static', filename='uploads/' ~ report.before_photo) }}" alt="Before cleaning" loading="lazy">
+            <figcaption>Before</figcaption>
+        </figure>
+        {% if report.after_photo %}
+        <figure>
+            <img src="{{ url_for('static', filename='uploads/' ~ report.after_photo) }}" alt="After cleaning" loading="lazy">
+            <figcaption>After</figcaption>
+        </figure>
+        {% else %}
+        <div class="awaiting"><p>Waiting for cleanup.<br>The "after" photo will appear here.</p></div>
+        {% endif %}
+    </section>
+
+    <!-- ADMIN: upload after photo -->
+    {% if is_admin and report.status != 'cleaned' %}
+    <form class="card" method="post" action="/admin/report/{{ report.id }}/resolve" enctype="multipart/form-data" data-loading-form>
+        <h2>Mark as cleaned</h2>
+        <label for="after_photo">Photo after cleaning</label>
+        <input type="file" id="after_photo" name="after_photo" accept="image/*" capture="environment" required data-preview="#after-preview">
+        <img id="after-preview" class="preview" alt="Preview of the after photo">
+        <button type="submit" class="primary-btn block">Mark as cleaned</button>
+    </form>
+    {% endif %}
+
+    <!-- RESIDENT: rating + feedback -->
+    {% if report.status == 'cleaned' %}
+      {% if report.rating %}
+        <section class="card">
+            <h2>{{ 'Resident feedback' if is_admin else 'Your feedback' }}</h2>
+            <div class="stars-static" aria-label="{{ report.rating }} out of 5 stars">{{ '★' * report.rating }}{{ '☆' * (5 - report.rating) }}</div>
+            {% if report.feedback %}<blockquote class="feedback-quote">{{ report.feedback }}</blockquote>{% endif %}
+        </section>
+      {% elif not is_admin %}
+        <form class="card" method="post" action="/report/{{ report.id }}/feedback" data-loading-form>
+            <h2>How was the cleanup?</h2>
+            <fieldset class="stars" role="radiogroup" aria-label="Rating">
+                {% for n in [5,4,3,2,1] %}
+                <input type="radio" id="star{{ n }}" name="rating" value="{{ n }}" required>
+                <label for="star{{ n }}" title="{{ n }} star{{ 's' if n > 1 }}">★<span class="sr-only"></span></label>
+                {% endfor %}
+            </fieldset>
+            <label for="feedback">Comments (optional)</label>
+            <textarea id="feedback" name="feedback" maxlength="500" placeholder="Tell us how the cleanup went"></textarea>
+            <button type="submit" class="primary-btn block">Send feedback</button>
+        </form>
+      {% endif %}
+    {% endif %}
+</main>
+<script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+</body>
+</html>
