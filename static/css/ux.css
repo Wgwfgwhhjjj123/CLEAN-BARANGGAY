@@ -44,3 +44,9 @@ button, a, input, textarea { -webkit-tap-highlight-color:transparent; }
   .dashboard > .sidebar .nav-menu { grid-column:1 / -1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.3rem; }
   .dashboard > .sidebar .nav-menu .nav-item { display:flex; flex-direction:column; justify-content:center; gap:.3rem; min-height:60px; padding:.5rem .3rem; text-align:center; white-space:normal; }
 }
+/* Auth pages have full-width button/input defaults; keep the reveal control
+   inside the input without inheriting the submit button's width or margins. */
+.password-reveal { margin-bottom:20px; }
+.password-reveal > input { display:block; margin-bottom:0 !important; }
+.password-reveal > button { width:auto; height:auto; margin:0; box-shadow:none; z-index:1; }
+.password-reveal > button:hover { background:transparent; }

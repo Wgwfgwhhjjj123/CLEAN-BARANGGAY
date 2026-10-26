@@ -1,4 +1,4 @@
-"""Integration checks against a dedicated, disposable MySQL database.
+"""Integration checks against dedicated, disposable MySQL or PostgreSQL databases.
 
 Run with BASU_TEST_DATABASE=basureport_test python -m unittest discover -s tests -v.
 The configured MySQL user must have access to that database; no production DB is used.
@@ -6,16 +6,25 @@ The configured MySQL user must have access to that database; no production DB is
 import io
 import os
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 import tempfile
 
 TEST_DATABASE = os.getenv('BASU_TEST_DATABASE', '')
+TEST_POSTGRES_URL = os.getenv('BASU_TEST_POSTGRES_URL', '')
+if TEST_POSTGRES_URL:
+    from psycopg.conninfo import conninfo_to_dict
+    if not conninfo_to_dict(TEST_POSTGRES_URL).get('dbname', '').endswith('_test'):
+        raise RuntimeError('PostgreSQL test database must end with _test')
+    os.environ['SUPABASE_DB_URL'] = TEST_POSTGRES_URL
+elif TEST_DATABASE:
+    os.environ['SUPABASE_DB_URL'] = ''
 if TEST_DATABASE and not TEST_DATABASE.endswith('_test'):
     raise RuntimeError('BASU_TEST_DATABASE must end with _test')
 if TEST_DATABASE:
     os.environ['MYSQLDATABASE'] = TEST_DATABASE
 
-@unittest.skipUnless(TEST_DATABASE, 'Set BASU_TEST_DATABASE to a disposable database ending in _test')
+@unittest.skipUnless(TEST_DATABASE or TEST_POSTGRES_URL, 'Configure a disposable database ending in _test')
 class ReportingFlow(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -44,6 +53,9 @@ class ReportingFlow(unittest.TestCase):
     def setUp(self):
         self.module.db_execute('DELETE FROM notifications')
         self.module.db_execute('DELETE FROM reports')
+        self.module.db_execute('DELETE FROM resident_login_otps')
+        self.module.db_execute('DELETE FROM resident_password_reset_otps')
+        self.module.db_execute('DELETE FROM users')
         self.module.db_execute('''INSERT INTO reports
             (report_code,resident_email,fullname,report_date,report_time,sitio,description,image,status,created_at)
             VALUES ('TEST-OLD','resident@example.test','Test Resident','2026-01-01','12:00','Purok 1','Waste','before.png','Pending','2026-01-01 12:00:00')''')
@@ -132,3 +144,62 @@ class ReportingFlow(unittest.TestCase):
             self.assertEqual(self.app.test_client().get(path).status_code, 302)
             self.assertEqual(self.admin.get(path).status_code, 200)
         self.assertIn('After photo will appear', self.resident.get('/resident/report/TEST-OLD').text)
+
+    def test_report_pages_handle_database_outage(self):
+        with patch.object(self.module, 'get_all_reports', side_effect=RuntimeError('Synthetic connection failure')):
+            for path in ['/admin/transactions', '/admin/feedback']:
+                response = self.admin.get(path)
+                self.assertEqual(response.status_code, 503)
+                self.assertIn('Reports temporarily unavailable', response.text)
+                self.assertNotIn('Traceback', response.text)
+                self.assertNotIn('No feedback yet', response.text)
+
+    def test_methodology_is_removed(self):
+        self.assertEqual(self.admin.get('/admin/development-methodology').status_code, 404)
+        for path in ['/admin-dashboard', '/admin/transactions', '/admin/feedback', '/admin/report/TEST-OLD']:
+            self.assertNotIn('Development Methodology', self.admin.get(path).text)
+
+    def test_notifications_only_modify_resident_owned_updates(self):
+        for code, kind in [('own', 'completed'), ('admin', 'feedback')]:
+            self.module.create_notification('Test', 'Test', kind, 'TEST-OLD')
+        self.module.create_notification('Other', 'Other resident', 'completed', 'NOT-OWNED')
+        notifications = self.resident.get('/api/resident/notifications').json['notifications']
+        self.assertEqual(len(notifications), 1)
+        notification_id = notifications[0]['id']
+        self.assertEqual(self.resident.post('/api/resident/notifications/'+notification_id+'/read').status_code, 200)
+        self.assertTrue(self.resident.get('/api/resident/notifications').json['notifications'][0]['is_read'])
+        self.assertEqual(self.other.post('/api/resident/notifications/'+notification_id+'/read').status_code, 404)
+        self.assertEqual(self.resident.post('/api/resident/notifications/'+notification_id+'/delete').status_code, 200)
+        self.module.create_notification('Own', 'Own update', 'accepted', 'TEST-OLD')
+        self.assertEqual(self.resident.post('/api/resident/notifications/read-all').status_code, 200)
+        self.assertEqual(self.resident.post('/api/resident/notifications/delete-all').status_code, 200)
+        self.assertEqual(self.resident.get('/api/resident/notifications').json['notifications'], [])
+        self.assertEqual(len(self.module.get_all_notifications()), 2)
+
+    def test_signup_login_and_reset_upserts(self):
+        client = self.app.test_client()
+        account = {'fullname':'Signup Test','email':'signup@example.test', 'password':'ValidPassword123!', 'confirm_password':'ValidPassword123!'}
+        self.assertEqual(client.post('/signup', data=account).status_code, 302)
+        self.assertIn('already registered', client.post('/signup', data=account).text)
+        user = self.module.db_fetchone('SELECT * FROM users WHERE email = %s', (account['email'],))
+        self.assertNotEqual(user['password'], account['password'])
+        with patch.object(self.module, 'send_otp_email') as sender:
+            for _ in range(2):
+                self.assertEqual(client.post('/resident-login', data=account).status_code, 302)
+            self.assertEqual(sender.call_count, 2)
+        self.assertEqual(len(self.module.db_fetchall('SELECT * FROM resident_login_otps')), 1)
+        with patch.object(self.module, 'send_password_reset_email') as sender:
+            for _ in range(2):
+                self.assertEqual(client.post('/forgot-password', data={'email':account['email']}).status_code, 302)
+            self.assertEqual(sender.call_count, 2)
+        self.assertEqual(len(self.module.db_fetchall('SELECT * FROM resident_password_reset_otps')), 1)
+
+    @unittest.skipUnless(TEST_POSTGRES_URL, 'PostgreSQL RLS check')
+    def test_supabase_tables_block_browser_api_roles(self):
+        tables = ['users','reports','notifications','announcements','resident_login_otps','resident_password_reset_otps']
+        for table in tables:
+            result = self.module.db_fetchone('SELECT relrowsecurity FROM pg_class WHERE oid = %s::regclass', ('public.'+table,))
+            self.assertTrue(result['relrowsecurity'])
+            for role in ['anon','authenticated']:
+                result = self.module.db_fetchone('SELECT has_table_privilege(%s, %s, %s) AS allowed', (role, 'public.'+table, 'SELECT'))
+                self.assertFalse(result['allowed'])

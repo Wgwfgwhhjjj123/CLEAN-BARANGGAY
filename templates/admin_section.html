@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{{ {'residents': 'Residents', 'feedback': 'Feedback', 'benefits': 'Transactions', 'methodology': 'Development Methodology', 'settings': 'Settings'}[section] }} | BasuReport</title>
+    <title>{{ {'residents': 'Residents', 'feedback': 'Feedback', 'benefits': 'Transactions', 'settings': 'Settings'}[section] }} | BasuReport</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_dashboard.css') }}">
     {% include 'shared_ux.html' %}
@@ -18,7 +18,6 @@
             <a href="{{ url_for('admin_residents_page') }}" class="side-link{{ ' active' if section == 'residents' }}"{{ ' aria-current="page"' if section == 'residents' }}><span class="ico">👥</span>Residents</a>
             <a href="{{ url_for('admin_feedback_page') }}" class="side-link{{ ' active' if section == 'feedback' }}"{{ ' aria-current="page"' if section == 'feedback' }}><span class="ico">★</span>Feedback</a>
             <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link{{ ' active' if section == 'benefits' }}"{{ ' aria-current="page"' if section == 'benefits' }}><span class="ico">✓</span>Transactions</a>
-            <a href="{{ url_for('admin_development_methodology_page') }}" class="side-link{{ ' active' if section == 'methodology' }}"{{ ' aria-current="page"' if section == 'methodology' }}><span class="ico">◈</span>Development Methodology</a>
             <a href="{{ url_for('admin_settings_page') }}" class="side-link{{ ' active' if section == 'settings' }}"{{ ' aria-current="page"' if section == 'settings' }}><span class="ico">⚙</span>Settings</a>
         </nav>
         <a href="{{ url_for('logout') }}" class="side-link logout"><span class="ico">⎋</span>Log out</a>
@@ -37,7 +36,10 @@
         </header>
 
         <main class="content">
-            {% if section == 'residents' %}
+            {% if page_error and section != 'residents' %}
+            <h1>{{ 'Resident feedback' if section == 'feedback' else 'Resident–admin transactions' }}</h1>
+            <section class="card section-card" role="alert"><h2>Reports temporarily unavailable</h2><p>{{ page_error }}</p><a class="btn" href="{{ request.path }}">Try again</a></section>
+            {% elif section == 'residents' %}
             <h1>Residents</h1>
             <p class="section-intro">Registered residents and their recent activity.</p>
             {% if page_error %}
@@ -74,7 +76,7 @@
             {% elif section == 'feedback' %}
             <h1>Resident feedback</h1>
             <p class="section-intro">Ratings and comments submitted after completed cleanups.</p>
-            {% for report in reports|sort(attribute='feedback_at', reverse=true) %}<article class="card section-card"><div class="card-head"><h2>{{ report.fullname }} · {{ report.sitio }}</h2><a class="pill" href="{{ url_for('admin_report_detail', report_id=report.id) }}">{{ report.id }} →</a></div>{% include 'cleanup_feedback.html' %}</article>{% else %}<section class="card section-card empty-state"><h2>No feedback yet</h2><p>Resident ratings will appear here after cleanup is completed.</p></section>{% endfor %}
+            {% for report in reports %}<article class="card section-card"><div class="card-head"><h2>{{ report.fullname }} · {{ report.sitio }}</h2><a class="pill" href="{{ url_for('admin_report_detail', report_id=report.id) }}">{{ report.id }} →</a></div>{% include 'cleanup_feedback.html' %}</article>{% else %}<section class="card section-card empty-state"><h2>No feedback yet</h2><p>Resident ratings will appear here after cleanup is completed.</p></section>{% endfor %}
             {% elif section == 'benefits' %}
             <h1>Resident–admin transactions</h1><p class="section-intro">Follow each report from resident submission to barangay action and resident feedback. Latest reports appear first.</p>
             <ol class="cleanup-steps"><li>1. Resident reports</li><li>2. Admin reviews</li><li>3. Team cleans</li><li>4. Resident rates</li></ol>
@@ -82,19 +84,6 @@
             <div class="table-wrap"><table><thead><tr><th>Report / date</th><th>Resident → Barangay</th><th>Status</th><th>Feedback</th><th>Action</th></tr></thead><tbody>
             {% for report in reports %}<tr data-transaction-row><td>{{ report.id }}<br><small>{{ report.created_at }}</small></td><td>{{ report.fullname }}<br>{{ report.sitio }}</td><td><span class="status-badge status-{{ report.status|lower|replace(' ', '-') }}">{{ report.status }}</span></td><td>{{ (report.rating|string ~ '/5 ★') if report.rating else 'Awaiting feedback' if report.status == 'Completed' else '—' }}</td><td><a class="pill" href="{{ url_for('admin_report_detail', report_id=report.id) }}">{{ 'Review' if report.status == 'Pending' else 'Manage' }} →</a></td></tr>{% else %}<tr><td colspan="5" class="empty">No reports submitted yet.</td></tr>{% endfor %}
             </tbody></table></div><p id="transactions-empty" class="empty" hidden>No transactions match your search.</p></section>
-            {% elif section == 'methodology' %}
-            <h1>Development Methodology</h1>
-            <p class="section-intro">An iterative, user-focused approach for building and improving BasuReport.</p>
-            <section class="card methodology-card">
-                <ol class="method-steps">
-                    <li><span>1</span><div><h2>Understand the need</h2><p>Identify the reporting and cleanup coordination needs of residents and barangay administrators.</p></div></li>
-                    <li><span>2</span><div><h2>Plan and design</h2><p>Organize requirements into clear user flows, page layouts, and report-status steps before implementation.</p></div></li>
-                    <li><span>3</span><div><h2>Build in small increments</h2><p>Develop related features such as accounts, reports, notifications, and dashboard tools in manageable pieces.</p></div></li>
-                    <li><span>4</span><div><h2>Test the workflows</h2><p>Check page navigation, form validation, access controls, and report state changes, including common error cases.</p></div></li>
-                    <li><span>5</span><div><h2>Review and improve</h2><p>Use testing and user feedback to refine usability, accessibility, and reliability in the next iteration.</p></div></li>
-                </ol>
-                <p class="info-note">This page describes the project’s iterative development approach; it does not represent a formal certification or audit.</p>
-            </section>
             {% else %}
             <h1>Settings</h1>
             <p class="section-intro">Personal display preferences for this browser.</p>
