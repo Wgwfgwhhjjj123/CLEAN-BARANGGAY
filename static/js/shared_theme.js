@@ -28,8 +28,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'theme') applyTheme(event.newValue || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
   });
 
+  document.querySelectorAll('[data-password-toggle]').forEach(button => {
+    const input = document.getElementById(button.getAttribute('aria-controls'));
+    if (!input) return;
+
+    button.addEventListener('click', () => {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      button.setAttribute('aria-pressed', String(show));
+      button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  });
+
   document.querySelectorAll('input[type="password"]').forEach(input => {
-    // Signup and older form controls already own their password toggles.
+    // Explicit eye toggles and older password-field controls own their toggles.
     if (document.querySelector(`[data-password-toggle][aria-controls="${input.id}"]`) || input.closest('.password-field')) return;
     const wrap = document.createElement('div');
     wrap.className = 'password-reveal';

@@ -290,6 +290,67 @@ body::after {
     transform: translateY(0);
 }
 
+.right-panel .password-input-wrapper {
+    position: relative;
+}
+
+.right-panel .password-input-wrapper input {
+    padding-right: 52px;
+}
+
+.right-panel .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: var(--auth-muted);
+    transform: translateY(-50%);
+}
+
+.right-panel .password-toggle:hover,
+.right-panel .password-toggle:active {
+    transform: translateY(-50%);
+    background: #eaf3eb;
+    box-shadow: none;
+    color: #247a43;
+    filter: none;
+}
+
+.right-panel .password-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.right-panel .password-toggle .eye-off-icon,
+.right-panel .password-toggle[aria-pressed="true"] .eye-icon {
+    display: none;
+}
+
+.right-panel .password-toggle[aria-pressed="true"] .eye-off-icon {
+    display: block;
+}
+
+body.dark-mode .right-panel .password-toggle:hover,
+body.dark-mode .right-panel .password-toggle:active {
+    background: #39433c;
+    color: #b9c9bc;
+}
+
 .right-panel .back,
 .right-panel a.back {
     color: var(--auth-green);
