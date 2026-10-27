@@ -15,36 +15,37 @@ document.addEventListener('DOMContentLoaded', function () {
     const notificationCount = document.getElementById('notification-count');
     const notificationSummary = document.getElementById('notification-summary');
     const notificationFeedback = document.getElementById('notification-feedback');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarScrim = document.getElementById('scrim');
+    const menuToggle = document.getElementById('menu-btn');
+    const dashboardSearch = document.getElementById('dashboard-search');
     let reportSuccessToast = document.querySelector('.report-success-toast');
     let residentToastTimeout = null;
     let notifications = [];
 
-    function addFloatingWaste() {
-        if (document.querySelector('.resident-floating-waste')) return;
-
-        const layer = document.createElement('div');
-        layer.className = 'resident-floating-waste';
-        layer.setAttribute('aria-hidden', 'true');
-
-        const wasteItems = ['♻', '🥫', '🍃', '🧴', '🧻', '♻', '🍃'];
-        wasteItems.forEach(function (symbol) {
-            const item = document.createElement('span');
-            item.className = 'resident-floating-waste-item';
-            item.textContent = symbol;
-            item.style.left = (8 + Math.random() * 84) + '%';
-            item.style.top = (8 + Math.random() * 84) + '%';
-            item.style.setProperty('--float-duration', (7 + Math.random() * 6) + 's');
-            item.style.setProperty('--float-delay', (-Math.random() * 10) + 's');
-            item.style.setProperty('--float-drift', (10 + Math.random() * 22) + 'px');
-            item.style.setProperty('--float-turn', (8 + Math.random() * 18) + 'deg');
-            item.style.setProperty('--float-size', (20 + Math.random() * 16) + 'px');
-            layer.appendChild(item);
-        });
-
-        document.body.prepend(layer);
+    function setSidebarOpen(open) {
+        if (!sidebar || !sidebarScrim || !menuToggle) return;
+        sidebar.classList.toggle('open', open);
+        sidebarScrim.classList.toggle('show', open);
+        menuToggle.setAttribute('aria-expanded', String(open));
+        menuToggle.setAttribute(
+            'aria-label',
+            open ? 'Close menu' : 'Open menu'
+        );
+        document.body.classList.toggle('sidebar-open', open);
     }
 
-    addFloatingWaste();
+    if (menuToggle) {
+        menuToggle.addEventListener('click', function () {
+            setSidebarOpen(!(sidebar && sidebar.classList.contains('open')));
+        });
+    }
+
+    if (sidebarScrim) {
+        sidebarScrim.addEventListener('click', function () {
+            setSidebarOpen(false);
+        });
+    }
 
     function dismissResidentToast() {
         if (!reportSuccessToast) return;
@@ -294,7 +295,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const title = document.createElement('h3');
             title.textContent = announcement.title;
             const date = document.createElement('time');
-            date.textContent = announcement.created_at;
+            const timestamp = String(announcement.created_at || '');
+            const parsedDate = new Date(timestamp.replace(' ', 'T'));
+            date.dateTime = timestamp.replace(' ', 'T');
+            date.textContent = Number.isNaN(parsedDate.getTime())
+                ? timestamp
+                : new Intl.DateTimeFormat(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                }).format(parsedDate);
             heading.append(title, date);
             const message = document.createElement('p');
             message.textContent = announcement.message;
@@ -535,20 +544,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.querySelectorAll('.nav-item[data-page]').forEach(function (item) {
-            item.classList.remove('active');
+            const isSelected = item.dataset.page === pageId;
+            item.classList.toggle('active', isSelected);
+            if (isSelected) {
+                item.setAttribute('aria-current', 'page');
+            } else {
+                item.removeAttribute('aria-current');
+            }
         });
 
         section.classList.add('active');
+        setSidebarOpen(false);
 
-        const selectedNav = document.querySelector(
-            '.nav-item[data-page="' + pageId + '"]'
-        );
-
-        if (selectedNav) selectedNav.classList.add('active');
+        if (window.location.hash !== '#' + pageId) {
+            window.history.replaceState(null, '', '#' + pageId);
+        }
 
         const titles = {
             home: 'Home',
-            report: 'Report Garbage',
+            report: 'Submit a Report',
             'my-reports': 'My Reports'
         };
 
@@ -791,12 +805,53 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (statusFilter) {
-        statusFilter.addEventListener('change', filterReports);
+        statusFilter.addEventListener('change', function () {
+            document.querySelectorAll('[data-report-filter]').forEach(
+                function (button) {
+                    const selected = button.dataset.reportFilter === statusFilter.value;
+                    button.classList.toggle('is-active', selected);
+                    button.setAttribute('aria-pressed', String(selected));
+                }
+            );
+            filterReports();
+        });
+    }
+
+    document.querySelectorAll('[data-report-filter]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (!statusFilter) return;
+            statusFilter.value = button.dataset.reportFilter;
+            document.querySelectorAll('[data-report-filter]').forEach(
+                function (item) {
+                    const selected = item === button;
+                    item.classList.toggle('is-active', selected);
+                    item.setAttribute('aria-pressed', String(selected));
+                }
+            );
+            filterReports();
+        });
+    });
+
+    if (dashboardSearch && reportSearch) {
+        dashboardSearch.addEventListener('input', function () {
+            reportSearch.value = dashboardSearch.value;
+            filterReports();
+            if (dashboardSearch.value.trim()) showPage('my-reports');
+            else if (document.activeElement === dashboardSearch) showPage('home');
+        });
     }
 
     window.clearReportFilters = function () {
         if (reportSearch) reportSearch.value = '';
+        if (dashboardSearch) dashboardSearch.value = '';
         if (statusFilter) statusFilter.value = 'all';
+        document.querySelectorAll('[data-report-filter]').forEach(
+            function (button) {
+                const selected = button.dataset.reportFilter === 'all';
+                button.classList.toggle('is-active', selected);
+                button.setAttribute('aria-pressed', String(selected));
+            }
+        );
         filterReports();
     };
 
@@ -956,11 +1011,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.key === 'Escape') {
             closeReportDetails();
             closeEditReport();
+            if (
+                notificationPanel &&
+                notificationToggle &&
+                !notificationPanel.hidden
+            ) {
+                notificationPanel.hidden = true;
+                notificationToggle.setAttribute('aria-expanded', 'false');
+                notificationToggle.focus();
+            }
+            setSidebarOpen(false);
         }
     });
 
     (function initializeDashboard() {
-
+        showPageFromHash();
         loadNotifications();
         refreshAnnouncements();
         refreshDeletedReports();

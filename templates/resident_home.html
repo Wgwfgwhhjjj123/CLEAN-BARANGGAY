@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2e9e5b">
 <title>Resident Dashboard | BasuReport</title>
 
+{% include 'shared_ux.html' %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/resident_home.css') }}">
-    {% include 'shared_ux.html' %}
 </head>
 
 <body>
@@ -14,10 +15,10 @@
 <div class="dashboard">
 
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar" aria-label="Resident navigation">
         <div class="logo">
             <span class="logo-mark">♻</span>
-            <span>BasuReport</span>
+            <span>Basu<span class="brand-accent">Report</span></span>
         </div>
 
         <div class="profile">
@@ -28,13 +29,14 @@
             </div>
         </div>
 
-        <nav class="nav-menu">
-            <a class="nav-item active" data-page="home" href="#home">
+        <nav class="nav-menu" aria-label="Resident navigation">
+            <a class="nav-item active" data-page="home" href="#home"
+               aria-current="page">
                 <span class="nav-icon">⌂</span> Home
             </a>
 
             <a class="nav-item" data-page="report" href="#report">
-                <span class="nav-icon">＋</span> Report Garbage
+                <span class="nav-icon">＋</span> Submit a Report
             </a>
 
             <a class="nav-item" data-page="my-reports" href="#my-reports">
@@ -48,11 +50,21 @@
             </a>
         </div>
     </aside>
+    <div class="scrim" id="scrim"></div>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
 
         <header class="topbar">
+            <button id="menu-btn" class="icon-btn menu-btn" type="button"
+                    aria-label="Open menu" aria-expanded="false"
+                    aria-controls="sidebar">☰</button>
+            <label class="dashboard-search">
+                <span class="sr-only">Search my reports</span>
+                <input type="search" id="dashboard-search"
+                       placeholder="Search my reports by location or status"
+                       autocomplete="off">
+            </label>
             <div>
                 <p class="page-label">BasuReport / Resident</p>
                 <h2 id="page-title">Home</h2>
@@ -139,34 +151,6 @@
                 <div class="welcome-art" aria-hidden="true">♻</div>
             </div>
 
-            <section class="resident-announcements" aria-labelledby="resident-announcements-title">
-                <div class="resident-announcements-heading">
-                    <div>
-                        <span class="eyebrow">FROM YOUR BARANGAY</span>
-                        <h2 id="resident-announcements-title">Community announcements</h2>
-                        <p class="resident-announcements-note">
-                            New announcements stay here for 24 hours, then move to history.
-                        </p>
-                    </div>
-                    <span aria-hidden="true">📣</span>
-                </div>
-                <div class="resident-announcement-list" id="residentAnnouncementList"
-                     aria-live="polite">
-                    <p class="resident-announcement-empty">Loading announcements...</p>
-                </div>
-                <div class="resident-announcement-archive">
-                    <button type="button" class="announcement-history-toggle"
-                            id="announcementHistoryToggle"
-                            aria-expanded="false"
-                            aria-controls="residentAnnouncementHistory">
-                        View announcement history
-                    </button>
-                    <div class="resident-announcement-list announcement-history-list"
-                         id="residentAnnouncementHistory" hidden
-                         aria-live="polite"></div>
-                </div>
-            </section>
-
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-icon">▤</div>
@@ -207,6 +191,35 @@
                 </div>
             </div>
 
+            <section class="resident-announcements" id="resident-announcements"
+                     aria-labelledby="resident-announcements-title">
+                <div class="resident-announcements-heading">
+                    <div>
+                        <span class="eyebrow">FROM YOUR BARANGAY</span>
+                        <h2 id="resident-announcements-title">Community announcements</h2>
+                        <p class="resident-announcements-note">
+                            New announcements stay here for 24 hours, then move to history.
+                        </p>
+                    </div>
+                    <span aria-hidden="true">📣</span>
+                </div>
+                <div class="resident-announcement-list" id="residentAnnouncementList"
+                     aria-live="polite">
+                    <p class="resident-announcement-empty">Loading announcements...</p>
+                </div>
+                <div class="resident-announcement-archive">
+                    <button type="button" class="announcement-history-toggle"
+                            id="announcementHistoryToggle"
+                            aria-expanded="false"
+                            aria-controls="residentAnnouncementHistory">
+                        View announcement history
+                    </button>
+                    <div class="resident-announcement-list announcement-history-list"
+                         id="residentAnnouncementHistory" hidden
+                         aria-live="polite"></div>
+                </div>
+            </section>
+
             <div class="content-card">
                 <div class="section-heading">
                     <h2>Your report helps the whole barangay 🌱</h2>
@@ -223,44 +236,6 @@
                 </button>
             </div>
 
-            <section class="waste-guide" aria-labelledby="waste-guide-title">
-                <div class="guide-heading">
-                    <div>
-                        <span class="eyebrow">SMALL HABITS, BIG IMPACT</span>
-                        <h2 id="waste-guide-title">Waste management, made simple</h2>
-                        <p>Everyday choices can reduce litter and keep recyclable materials in use.</p>
-                    </div>
-                    <span class="guide-mark" aria-hidden="true">♻</span>
-                </div>
-
-                <div class="waste-categories">
-                    <article class="waste-category organic">
-                        <span class="category-icon" aria-hidden="true">🍃</span>
-                        <h3>Biodegradable</h3>
-                        <p>Food scraps, fruit peels, leaves, and other compostable organic waste.</p>
-                    </article>
-                    <article class="waste-category recyclable">
-                        <span class="category-icon" aria-hidden="true">↻</span>
-                        <h3>Recyclable</h3>
-                        <p>Clean paper, cardboard, glass, metal cans, and accepted plastic containers.</p>
-                    </article>
-                    <article class="waste-category residual">
-                        <span class="category-icon" aria-hidden="true">◌</span>
-                        <h3>Residual</h3>
-                        <p>Non-recyclable waste that cannot be composted or recovered for reuse.</p>
-                    </article>
-                    <article class="waste-category special">
-                        <span class="category-icon" aria-hidden="true">!</span>
-                        <h3>Special waste</h3>
-                        <p>Batteries, bulbs, electronics, and other items that need careful handling.</p>
-                    </article>
-                </div>
-
-                <div class="reporting-tip">
-                    <span class="tip-icon" aria-hidden="true">✦</span>
-                    <p><strong>Reporting tip</strong> Add a clear landmark, describe the waste, and upload a well-lit photo. Never handle hazardous waste yourself.</p>
-                </div>
-            </section>
         </section>
 
         <!-- SUBMIT REPORT -->
@@ -427,6 +402,21 @@
                         <option value="completed">Completed</option>
                         <option value="rejected">Rejected</option>
                     </select>
+                </div>
+                <div class="report-filter-tabs" role="group"
+                     aria-label="Filter reports by status">
+                    <button type="button" class="report-filter-tab is-active"
+                            data-report-filter="all" aria-pressed="true">All</button>
+                    <button type="button" class="report-filter-tab"
+                            data-report-filter="pending" aria-pressed="false">Pending</button>
+                    <button type="button" class="report-filter-tab"
+                            data-report-filter="accepted" aria-pressed="false">Accepted</button>
+                    <button type="button" class="report-filter-tab"
+                            data-report-filter="progress" aria-pressed="false">In progress</button>
+                    <button type="button" class="report-filter-tab"
+                            data-report-filter="completed" aria-pressed="false">Completed</button>
+                    <button type="button" class="report-filter-tab"
+                            data-report-filter="rejected" aria-pressed="false">Rejected</button>
                 </div>
 
                 <div class="reports-grid" id="reports-list">

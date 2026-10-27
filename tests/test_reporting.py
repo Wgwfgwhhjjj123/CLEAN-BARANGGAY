@@ -188,11 +188,48 @@ class ReportingFlow(unittest.TestCase):
                 self.assertEqual(client.post('/resident-login', data=account).status_code, 302)
             self.assertEqual(sender.call_count, 2)
         self.assertEqual(len(self.module.db_fetchall('SELECT * FROM resident_login_otps')), 1)
-        with patch.object(self.module, 'send_password_reset_email') as sender:
+        with patch.dict(os.environ, {
+                'BREVO_API_KEY': 'test-key',
+                'MAIL_DEFAULT_SENDER': 'noreply@example.test'
+        }), patch.object(self.module, 'send_password_reset_email') as sender:
             for _ in range(2):
                 self.assertEqual(client.post('/forgot-password', data={'email':account['email']}).status_code, 302)
             self.assertEqual(sender.call_count, 2)
         self.assertEqual(len(self.module.db_fetchall('SELECT * FROM resident_password_reset_otps')), 1)
+
+    def test_password_reset_reports_missing_email_configuration(self):
+        client = self.app.test_client()
+        with patch.dict(os.environ, {
+                'BREVO_API_KEY': '',
+                'MAIL_DEFAULT_SENDER': ''
+        }), patch.object(self.module, 'db_fetchone') as account_lookup:
+            response = client.post(
+                '/forgot-password',
+                data={'email': 'resident@example.test'}
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn('Password reset email is not configured', response.text)
+        account_lookup.assert_not_called()
+
+    def test_password_reset_handles_database_lookup_failure(self):
+        client = self.app.test_client()
+        with patch.dict(os.environ, {
+                'BREVO_API_KEY': 'test-key',
+                'MAIL_DEFAULT_SENDER': 'noreply@example.test'
+        }), patch.object(
+                self.module,
+                'db_fetchone',
+                side_effect=RuntimeError('Synthetic database failure')
+        ):
+            response = client.post(
+                '/forgot-password',
+                data={'email': 'resident@example.test'}
+            )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn('start password recovery', response.text)
+        self.assertNotIn('Traceback', response.text)
 
     @unittest.skipUnless(TEST_POSTGRES_URL, 'PostgreSQL RLS check')
     def test_supabase_tables_block_browser_api_roles(self):

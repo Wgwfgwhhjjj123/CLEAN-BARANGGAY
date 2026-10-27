@@ -1611,6 +1611,20 @@ def resident_home():
     )
 
 
+@app.route("/resident/settings")
+def resident_settings():
+    if "resident_email" not in session:
+        return redirect(url_for("resident_login"))
+    return render_template("resident_settings.html")
+
+
+@app.route("/resident/history")
+def resident_history():
+    if "resident_email" not in session:
+        return redirect(url_for("resident_login"))
+    return render_template("resident_history.html")
+
+
 @app.context_processor
 def feedback_form_token():
     if "feedback_token" not in session:
@@ -2480,13 +2494,32 @@ def forgot_password():
         email = request.form.get("email", "").strip().lower()
 
         if not email:
-            flash("Please enter your registered email.")
+            flash("Please enter your registered email.", "error")
             return render_template("forgot_password.html")
 
-        user = db_fetchone(
-            "SELECT email FROM users WHERE LOWER(email) = %s",
-            (email,)
-        )
+        if not os.getenv("BREVO_API_KEY", "").strip() or not os.getenv(
+            "MAIL_DEFAULT_SENDER", ""
+        ).strip():
+            app.logger.error("Password reset email service is not configured")
+            flash(
+                "Password reset email is not configured yet. Please contact "
+                "your barangay administrator.",
+                "error"
+            )
+            return render_template("forgot_password.html"), 503
+
+        try:
+            user = db_fetchone(
+                "SELECT email FROM users WHERE LOWER(email) = %s",
+                (email,)
+            )
+        except Exception:
+            app.logger.exception("Could not look up password reset account")
+            flash(
+                "We couldn't start password recovery right now. Please try again shortly.",
+                "error"
+            )
+            return render_template("forgot_password.html"), 503
 
         # Use the same response whether the account exists or not.
         if user:
@@ -2496,25 +2529,43 @@ def forgot_password():
             now = datetime.now()
             expires_at = now + timedelta(minutes=5)
 
-            db_execute(otp_upsert_query("resident_password_reset_otps"), (email, otp_hash, expires_at, now))
+            try:
+                db_execute(
+                    otp_upsert_query("resident_password_reset_otps"),
+                    (email, otp_hash, expires_at, now)
+                )
+            except Exception:
+                app.logger.exception("Could not create password reset OTP")
+                flash(
+                    "We couldn't start password recovery right now. Please try again shortly.",
+                    "error"
+                )
+                return render_template("forgot_password.html"), 503
 
             try:
                 send_password_reset_email(email, otp)
             except Exception:
                 app.logger.exception("Could not send password reset OTP")
-                db_execute(
-                    "DELETE FROM resident_password_reset_otps WHERE email = %s",
-                    (email,)
-                )
+                try:
+                    db_execute(
+                        "DELETE FROM resident_password_reset_otps WHERE email = %s",
+                        (email,)
+                    )
+                except Exception:
+                    app.logger.exception("Could not remove unsent password reset OTP")
                 flash(
-                    "Could not send the reset code. Check the Render email "
-                    "settings and service logs."
+                    "We couldn't send your reset code. Please try again later "
+                    "or contact your barangay administrator.",
+                    "error"
                 )
-                return render_template("forgot_password.html")
+                return render_template("forgot_password.html"), 503
 
             session["pending_password_reset_email"] = email
 
-        flash("If that email is registered, a password reset code will be sent.")
+        flash(
+            "If that email is registered, a password reset code will be sent.",
+            "success"
+        )
         return redirect(url_for("reset_password_otp"))
 
     return render_template("forgot_password.html")
