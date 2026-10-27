@@ -11,31 +11,17 @@
     {% include 'shared_ux.html' %}
 </head>
 
-<body>
+<body class="resident-auth">
 
-    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
-            aria-label="Switch to dark mode" aria-pressed="false">
-        <span class="site-theme-icon" aria-hidden="true">☾</span>
-        <span class="site-theme-label">Dark mode</span>
-    </button>
-
-    <div class="login-container">
-
-        <div class="left-panel">
-            <div class="logo">♻</div>
-            <h1>BasuReport</h1>
-            <p>Garbage Reporting System</p>
-            <div class="brand-message">
-                <p>Keep Our Community Clean</p>
-                <p class="brand-caption">Together, small actions make a cleaner and healthier barangay.</p>
-            </div>
-        </div>
+    {% include 'auth_theme_toggle.html' %}
+    <main class="login-container" aria-label="Resident sign in">
+        {% include 'auth_brand.html' %}
 
         <div class="right-panel">
             <p class="section-label">BASUReport · RESIDENT PORTAL</p>
             <h2>Resident Login</h2>
             <p class="subtitle">
-                Welcome! Login to submit garbage reports and track their status.
+                Sign in to submit garbage reports and track their status.
             </p>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -48,7 +34,7 @@
                 {% endfor %}
             {% endwith %}
 
-            <form action="resident-login" method="POST">
+            <form action="{{ url_for('resident_login') }}" method="POST">
 
                 <div class="form-group">
                     <label for="email">Email Address</label>
@@ -56,6 +42,7 @@
                         type="email"
                         id="email"
                         name="email"
+                        autocomplete="username"
                         placeholder="Enter your email"
                         required
                     >
@@ -67,6 +54,7 @@
                         type="password"
                         id="password"
                         name="password"
+                        autocomplete="current-password"
                         placeholder="Enter your password"
                         required
                     >
@@ -89,10 +77,11 @@
                 <a href="/signup" class="signup-link">Create Account</a>
             </p>
 
-<a href="/login" class="back">← Back to Login Options</a>
+            <a href="{{ url_for('login') }}" class="back">← Back to Account Selection</a>
+            <p class="footer">© 2026 Clean Barangay</p>
         </div>
 
-    </div>
+    </main>
 
 
     <script src="{{ url_for('static', filename='js/resident_login.js') }}"></script>

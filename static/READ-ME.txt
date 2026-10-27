@@ -1,0 +1,12 @@
+BasuReport - Sign Up and Sign In UI
+
+1. Extract this ZIP.
+2. Copy the templates and static folders into your existing CLEAN-BARANGGAY project, beside app.py. Replace matching files and keep the folder structure.
+3. Restart the app. Visit /signup and /resident-login.
+
+For your live Render website:
+Upload/commit these files to the main branch of the CLEAN-BARANGGAY GitHub repository. In Render select Manual Deploy > Deploy latest commit. After deployment, refresh with Ctrl+F5.
+
+This is a UI update for the existing Flask app, not a standalone website. It uses your existing routes, database and email setup. No database changes are required. Your passwords, .env and connection URLs are not included.
+
+Both pages use the layout from your admin login reference, support light/dark themes and stack on phones. Existing signup password rules, confirmation checks and login verification are preserved. The forest background uses the same external Unsplash image as your existing admin page, with a green gradient fallback.

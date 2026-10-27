@@ -1,0 +1,11 @@
+SUPABASE_DB_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-YOUR_REGION.pooler.supabase.com:5432/postgres
+FLASK_SECRET_KEY=put-a-long-random-text-here
+FLASK_DEBUG=0
+PORT=5000
+
+ADMIN_USERNAME=basureport.admin
+ADMIN_PASSWORD=change-this-password
+
+BREVO_API_KEY=
+MAIL_DEFAULT_SENDER=
+MAIL_SENDER_NAME=BasuReport

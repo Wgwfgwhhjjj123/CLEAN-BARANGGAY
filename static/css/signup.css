@@ -1,144 +1,26 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
+/* Signup shares the resident login shell; these styles own its extra fields. */
+.resident-auth.signup-page .signup-card {
+    width: auto;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+    padding-top: 38px;
+    padding-bottom: 38px;
 }
-
-body {
-    min-height: 100vh;
-    background: #f3f8f1;
-    color: #174d2b;
-    display: flex;
-    flex-direction: column;
-    opacity: 1;
-    transition: opacity 0.4s ease;
-}
-
-body.fade-out {
-    opacity: 0;
-    transform: translateY(-8px);
-}
-
-header {
-    width: 100%;
-    padding: 25px 8%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    font-size: 25px;
-    font-weight: bold;
-    color: #176b3a;
-    text-decoration: none;
-}
-
-.back-btn {
-    text-decoration: none;
-    color: #247a43;
-    font-size: 14px;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-.back-btn:hover {
-    color: #14552d;
-    transform: translateX(-3px);
-}
-
-.main-container {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 25px 20px 45px;
-}
-
-.signup-card {
-    width: 100%;
-    max-width: 460px;
-    background: #ffffff;
-    padding: 40px;
-    border-radius: 22px;
-    box-shadow: 0 12px 40px rgba(28, 88, 48, 0.08);
-    border: 1px solid #e5eee4;
-    animation: appear 0.6s ease;
-}
-
-@keyframes appear {
-    from {
-        opacity: 0;
-        transform: translateY(18px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.icon-circle {
-    width: 65px;
-    height: 65px;
-    background: #e5f3e6;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    margin: 0 auto 18px;
-}
-
-.signup-card h1 {
-    text-align: center;
-    font-size: 30px;
-    color: #174d2b;
-    margin-bottom: 10px;
-}
-
-.subtitle {
-    text-align: center;
-    font-size: 14px;
-    color: #829486;
-    line-height: 1.6;
-    margin-bottom: 30px;
-}
-
-.form-group {
-    margin-bottom: 19px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: bold;
-    color: #315d3d;
-    margin-bottom: 9px;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 14px 15px;
-    border: 1px solid #dce8dc;
-    background: #f8faf7;
-    border-radius: 10px;
-    outline: none;
-    font-size: 14px;
-    color: #174d2b;
-    transition: 0.3s;
-}
-
+.signup-page .password-input-wrapper { margin-bottom: 17px; }
+.signup-page .password-input-wrapper:has(+ .password-guidance) { margin-bottom: 0; }
 .password-input-wrapper {
     position: relative;
 }
 
-.password-input-wrapper input {
+.signup-page .password-input-wrapper input {
     padding-right: 48px;
+    margin-bottom: 0;
 }
 
-.password-toggle {
+.signup-page .password-toggle {
     position: absolute;
     top: 50%;
     right: 8px;
@@ -151,23 +33,29 @@ header {
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: #718477;
+    color: var(--auth-muted);
     cursor: pointer;
     transform: translateY(-50%);
+    min-height: 36px;
+    margin: 0;
+    box-shadow: none;
     transition: color 0.2s, background-color 0.2s;
 }
 
-.password-toggle:hover {
+.signup-page .password-toggle:hover {
+    transform: translateY(-50%);
+    box-shadow: none;
+    filter: none;
     background: #eaf3eb;
     color: #247a43;
 }
 
-.password-toggle:focus-visible {
+.signup-page .password-toggle:focus-visible {
     outline: 2px solid #299653;
     outline-offset: 2px;
 }
 
-.password-toggle svg {
+.signup-page .password-toggle svg {
     width: 20px;
     height: 20px;
     fill: none;
@@ -178,12 +66,12 @@ header {
 }
 
 
-.password-toggle .eye-off-icon,
-.password-toggle[aria-pressed="true"] .eye-icon {
+.signup-page .password-toggle .eye-off-icon,
+.signup-page .password-toggle[aria-pressed="true"] .eye-icon {
     display: none;
 }
 
-.password-toggle[aria-pressed="true"] .eye-off-icon {
+.signup-page .password-toggle[aria-pressed="true"] .eye-off-icon {
     display: block;
 }
 
@@ -198,7 +86,7 @@ header {
 }
 
 .password-guidance {
-    margin-top: -8px;
+    margin: 10px 0 17px;
     padding: 11px 12px 12px;
     border: 1px solid #e5eee6;
     border-radius: 10px;
@@ -289,102 +177,10 @@ header {
     font-weight: 700;
 }
 
-.signup-btn {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 10px;
-    background: #247a43;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: 0.3s;
-}
 
-.signup-btn:hover {
-    background: #14552d;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(36, 122, 67, 0.2);
-}
-
-.login-link {
-    text-align: center;
-    margin-top: 25px;
-    font-size: 14px;
-    color: #829486;
-}
-
-.login-link a {
-    color: #247a43;
-    font-weight: bold;
-    text-decoration: none;
-    margin-left: 4px;
-}
-
-.login-link a:hover {
-    text-decoration: underline;
-}
-
-.divider {
-    height: 1px;
-    background: #edf1ed;
-    margin-top: 25px;
-}
-
-footer {
-    text-align: center;
-    padding: 20px;
-    color: #829486;
-    font-size: 12px;
-}
-
-.flash-message {
-    background: #e5f3e6;
-    color: #176b3a;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-bottom: 18px;
-    text-align: center;
-}
-
-@media (max-width: 500px) {
-    header {
-        padding: 20px 6%;
-    }
-
-    .logo {
-        font-size: 21px;
-    }
-
-    .signup-card {
-        padding: 30px 22px;
-        border-radius: 18px;
-    }
-
-    .signup-card h1 {
-        font-size: 26px;
-    }
-
-    .main-container {
-        padding: 15px;
-    }
-
-    .password-requirements {
-        grid-template-columns: 1fr;
-    }
-
-    .strength-label {
-        min-width: 132px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .password-requirements li,
-    .strength-fill {
-        transition: none;
-    }
+@media (max-width: 420px) {
+    .password-requirements { grid-template-columns: 1fr; }
+    .password-strength { flex-wrap: wrap; }
+    .strength-track { flex-basis: 100%; }
+    .strength-label { min-width: 0; text-align: left; }
 }
