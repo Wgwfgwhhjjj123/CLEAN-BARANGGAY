@@ -719,7 +719,8 @@
 .ann-popup-ok { border:0; background:#2e9e5b; color:#fff; font-weight:700; padding:.55rem 1.3rem; border-radius:99px; cursor:pointer; }
 @media (prefers-reduced-motion:reduce) { .ann-popup { transition:none; } }
 </style>
-<div class="ann-popup-layer" id="ann-popup-layer" hidden>
+<div class="ann-popup-layer" id="ann-popup-layer"
+     data-resident-email="{{ session.get('resident_email') or '' }}" hidden>
     <div class="ann-popup" id="ann-popup" role="alertdialog"
          aria-labelledby="ann-popup-label" aria-describedby="ann-popup-list">
         <div class="ann-popup-head">
@@ -742,7 +743,7 @@
   if (!layer || !box || !list) return;
 
   // Remember which announcements this resident already dismissed (per account, per browser).
-  const KEY = 'basureport_seen_announcements_' + {{ (session.get('resident_email') or '')|tojson }};
+  const KEY = 'basureport_seen_announcements_' + (layer.dataset.residentEmail || '');
   const MAX_SHOWN = 3;
   let pendingIds = [];
   let isOpen = false;

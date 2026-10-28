@@ -1379,12 +1379,11 @@ body.dark-mode .announcement-history-toggle:hover {
 .resident-report-delete-btn {
     min-height: 34px;
     padding: 7px 10px;
-    border: 1px solid transparent;
     border-radius: 9px;
     font-size: 10px;
     font-weight: 700;
     cursor: pointer;
-    transition: transform .2s ease, background .2s ease;
+    transition: transform .2s ease, background .2s ease, border-color .2s ease, color .2s ease;
 }
 
 .resident-report-edit-btn {
@@ -1395,8 +1394,16 @@ body.dark-mode .announcement-history-toggle:hover {
 
 .resident-report-delete-btn:hover,
 .resident-report-edit-btn:hover,
-.resident-restore-report-btn:hover {
-    transform: translateY(-1px);
+.resident-restore-report-btn:hover,
+.resident-permanent-delete-report-btn:hover {
+   transform: translateY(-1px);
+}
+
+.resident-report-delete-btn:hover,
+.resident-permanent-delete-report-btn:hover {
+   border-color: #dc2626;
+   background: #dc2626;
+   color: #ffffff;
 }
 
 .resident-report-delete-btn:disabled,
