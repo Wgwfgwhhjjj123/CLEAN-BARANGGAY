@@ -30,7 +30,7 @@
   /* Every page includes this file, so swap the old recycle-symbol text logo for the real
      logo image everywhere, including pages that were not edited by hand. */
   document.addEventListener('DOMContentLoaded', function () {
-    var src = {{ url_for('static', filename='images/logo.png')|tojson }};
+    var src = "{{ url_for('static', filename='images/logo.png') }}";
     document.querySelectorAll('.brand, .logo, .logo-mark').forEach(function (el) {
       if (el.querySelector('img.brand-logo')) return;
       var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
