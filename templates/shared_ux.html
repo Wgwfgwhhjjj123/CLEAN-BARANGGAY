@@ -12,6 +12,19 @@
   /* BasuReport logo shown next to the name in headers and sidebars */
   .brand-logo { display:inline-block; width:34px; height:34px; flex:none; object-fit:contain;
                 border-radius:50%; vertical-align:middle; margin-right:.4rem; }
+
+  /* Large logo in the sign-in / sign-up side panels (replaces the small glass tile) */
+  .left-panel .logo { width:auto !important; height:auto !important; padding:0 !important;
+                      background:none !important; border:0 !important; box-shadow:none !important;
+                      border-radius:0 !important; font-size:0 !important; line-height:0 !important;
+                      display:flex !important; justify-content:center; align-items:center;
+                      margin-bottom:22px !important; }
+  .left-panel .logo .brand-logo { width:104px; height:104px; margin:0; background:#fff;
+                      box-shadow:0 0 0 6px rgba(255,255,255,.22), 0 14px 34px rgba(0,0,0,.28); }
+  @media (max-width:720px) {
+    .left-panel .logo { margin-bottom:12px !important; }
+    .left-panel .logo .brand-logo { width:72px; height:72px; }
+  }
 </style>
 <script>
   /* Every page includes this file, so swap the old recycle-symbol text logo for the real

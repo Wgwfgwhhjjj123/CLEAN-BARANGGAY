@@ -526,6 +526,15 @@ def report_error(message, status_code=400):
     return redirect(url_for("resident_home"))
 
 
+@app.after_request
+def do_not_cache_pages(response):
+    # Pages change depending on who is signed in, so the browser must ask the server
+    # again when the Back button is used (instead of showing an old sign-in/dashboard page).
+    if response.mimetype == "text/html":
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 # ==================================================
 # HOME AND LOGIN PAGES
 # ==================================================
@@ -537,18 +546,25 @@ def home():
 
 @app.route("/login")
 def login():
+    # Already signed in? Go straight to the dashboard instead of the sign-in choice.
+    if session.get("is_admin"):
+        return redirect(url_for("admin_dashboard"))
+    if session.get("resident_email"):
+        return redirect(url_for("resident_home"))
     return render_template("login.html")
 
 
 @app.route("/admin-login", methods=["GET", "POST"])
 def admin_login():
+    if request.method == "GET" and session.get("is_admin"):
+        return redirect(url_for("admin_dashboard"))
     if request.method == "POST":
         username = request.form.get("username", "")
         password = request.form.get("password", "")
 
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["is_admin"] = True
-            flash("Welcome back, Admin!", "welcome")
+            flash("Welcome to BasuReport, Admin!", "welcome")
             return redirect(url_for("admin_dashboard"))
 
         flash("Invalid username or password. Please try again.", "error")
@@ -1360,6 +1376,8 @@ def complete_report(report_id):
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+    if request.method == "GET" and session.get("resident_email"):
+        return redirect(url_for("resident_home"))
     if request.method == "POST":
         fullname = request.form.get("fullname", "").strip()
         email = request.form.get("email", "").strip().lower()
@@ -1409,7 +1427,7 @@ def signup():
                 generate_password_hash(password)
             ))
 
-            flash("Account created successfully! You can now log in.")
+            flash(f"Welcome to BasuReport, {fullname}! Your account was created. You can now log in.")
             return redirect(url_for("resident_login"))
 
         except INTEGRITY_ERRORS:
@@ -1427,6 +1445,8 @@ def signup():
 
 @app.route("/resident-login", methods=["GET", "POST"])
 def resident_login():
+    if request.method == "GET" and session.get("resident_email"):
+        return redirect(url_for("resident_home"))
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
@@ -1493,6 +1513,9 @@ def resident_login():
 
 @app.route("/verify-resident-otp", methods=["GET", "POST"])
 def verify_resident_otp():
+    if session.get("resident_email"):
+        return redirect(url_for("resident_home"))
+
     email = session.get("pending_resident_email")
 
     if not email:
@@ -1574,7 +1597,7 @@ def verify_resident_otp():
             session["resident_email"] = resident["email"]
             session["resident_name"] = resident["fullname"]
 
-            flash("Login successful!")
+            flash(f"Welcome to BasuReport, {resident['fullname']}!")
             return redirect(url_for("resident_home"))
 
         except Exception:

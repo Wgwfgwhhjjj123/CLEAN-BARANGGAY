@@ -172,3 +172,46 @@ body {
         padding: 35px 25px;
     }
 }
+
+/* ---- Show / hide password (eye button) ---- */
+/* The input's own bottom margin would make the wrapper taller than the box and push the
+   eye below the middle, so it is removed here (the form group already adds the spacing). */
+.resident-auth .password-input-wrapper { position: relative !important; }
+.resident-auth .password-input-wrapper input { margin-bottom: 0 !important; padding-right: 48px !important; }
+.resident-auth .password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    bottom: auto !important;
+    right: 8px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    display: grid !important;
+    place-items: center;
+    width: 34px !important;
+    height: 34px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #5d6f64;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+.resident-auth .password-toggle:hover { background: rgba(23, 107, 58, .1); color: #176b3a; }
+.resident-auth .password-toggle:focus-visible { outline: 2px solid #176b3a; outline-offset: 2px; }
+.resident-auth .password-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.resident-auth .password-toggle .eye-icon { display: block !important; }
+.resident-auth .password-toggle .eye-off-icon { display: none !important; }
+.resident-auth .password-toggle[aria-pressed="true"] .eye-icon { display: none !important; }
+.resident-auth .password-toggle[aria-pressed="true"] .eye-off-icon { display: block !important; }
+:root[data-theme="dark"] .resident-auth .password-toggle { color: #a8b9ae; }
+:root[data-theme="dark"] .resident-auth .password-toggle:hover { background: rgba(255, 255, 255, .1); color: #fff; }
