@@ -3,26 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Sign Up | BasuReport</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/resident_login.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
     {% include 'shared_ux.html' %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/signup.css') }}">
 </head>
-<body class="resident-auth signup-page">
-    {% include 'auth_theme_toggle.html' %}
-    <main class="login-container" aria-label="Create a resident account">
-        {% include 'auth_brand.html' %}
-        <section class="right-panel signup-card" aria-labelledby="signup-title">
-            <p class="section-label">BASUReport · RESIDENT PORTAL</p>
-            <h2 id="signup-title">Create Account</h2>
-            <p class="subtitle">Join us in building a cleaner and healthier community.</p>
+
+<body class="signup-page">
+
+    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
+            aria-label="Switch to dark mode" aria-pressed="false">
+        <span class="site-theme-icon" aria-hidden="true">☾</span>
+        <span class="site-theme-label">Dark mode</span>
+    </button>
+
+    <!-- HEADER -->
+    <header>
+        <a href="/" class="logo"><img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="34" height="34"> BasuReport</a>
+
+        <a href="/login" class="back-btn">
+            ← Back to Login
+        </a>
+    </header>
+
+    <!-- SIGN UP FORM -->
+    <main class="main-container">
+
+        <div class="signup-card">
+
+            <div class="icon-circle">🌱</div>
+
+            <h1>Create Account</h1>
+
+            <p class="subtitle">
+                Join us in building a cleaner and healthier community.
+            </p>
+
             <form action="/signup" method="POST">
                 {% with messages = get_flashed_messages() %}
-                    {% for message in messages %}
-                        <div class="flash-message" role="alert">{{ message }}</div>
-                    {% endfor %}
-                {% endwith %}
+                {% if messages %}
+
+            <div style="
+            background: #e5f3e6;
+            color: #176b3a;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 18px;
+            text-align: center;
+        ">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+
+        </div>
+    {% endif %}
+{% endwith %}
 
                 <div class="form-group">
                     <label for="fullname">Full Name</label>
@@ -121,17 +159,29 @@
                 </div>
 
                 <button type="submit" class="signup-btn">
-                    Create Account
+                    CREATE ACCOUNT →
                 </button>
 
             </form>
-            <p class="signup-text">Already have an account?
-                <a href="{{ url_for('resident_login') }}">Sign in</a>
+
+            <div class="divider"></div>
+
+            <p class="login-link">
+                Already have an account?
+                <a href="/login">Login</a>
             </p>
-            <a href="{{ url_for('login') }}" class="back">← Back to Account Selection</a>
-            <p class="footer">© 2026 Clean Barangay</p>
-        </section>
+
+        </div>
+
     </main>
+
+    <!-- FOOTER -->
+    <footer>
+        © 2026 BasuReport | Building a Cleaner Community
+    </footer>
+
+
     <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+
 </body>
 </html>

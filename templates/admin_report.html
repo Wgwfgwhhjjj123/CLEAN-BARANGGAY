@@ -11,7 +11,7 @@
 <body>
 <div class="shell">
     <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
-        <a href="{{ url_for('admin_dashboard') }}" class="brand">♻ Basu<span>Report</span></a>
+        <a href="{{ url_for('admin_dashboard') }}" class="brand"><img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="34" height="34"> Basu<span>Report</span></a>
         <nav>
             <a href="{{ url_for('admin_dashboard') }}" class="side-link"><span class="ico">▦</span>Dashboard</a>
             <a href="{{ url_for('admin_reports_page') }}" class="side-link active" aria-current="page"><span class="ico">🗑</span>Reports</a>

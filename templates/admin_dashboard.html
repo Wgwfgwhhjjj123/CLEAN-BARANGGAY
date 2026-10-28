@@ -26,7 +26,7 @@
 
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
-        <a href="{{ url_for('admin_dashboard') }}" class="brand">♻ Basu<span>Report</span></a>
+        <a href="{{ url_for('admin_dashboard') }}" class="brand"><img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="34" height="34"> Basu<span>Report</span></a>
         <nav>
             <a href="{{ url_for('admin_dashboard') }}" class="side-link active" aria-current="page"><span class="ico">▦</span>Dashboard</a>
             <a href="{{ url_for('admin_reports_page') }}" class="side-link"><span class="ico">🗑</span>Reports{% if st.pending %}<span class="count">{{ st.pending }}</span>{% endif %}</a>
@@ -44,12 +44,15 @@
         <!-- ===== TOP BAR ===== -->
         <header class="topbar">
             <button id="menu-btn" class="icon-btn menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>
-            <label class="search">
-                <span class="sr-only">Search reports</span>
-                <input type="search" id="search" placeholder="Search by location or category">
-            </label>
+            {# The report search box was replaced by the residents shortcut. The hidden
+               input stays only so the dashboard script can still find #search. #}
+            <input type="search" id="search" hidden aria-hidden="true" tabindex="-1" style="display:none">
+            <a class="pill residents-chip" href="{{ url_for('admin_residents_page') }}" aria-label="View residents">
+                <span aria-hidden="true">👥</span> Residents <span id="residents-chip-count"></span>
+            </a>
             <div class="top-actions">
-                <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
+                {# Light/dark button removed from the top bar. Hidden stub keeps the theme script happy. #}
+                <button id="theme-toggle" type="button" aria-hidden="true" tabindex="-1" style="display:none"></button>
                 <button class="icon-btn bell" type="button" aria-label="Notifications" aria-controls="admin-notifications" aria-haspopup="dialog">🔔<i class="dot" hidden></i></button>
                 <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
             </div>
@@ -57,14 +60,19 @@
 
         <dialog id="admin-notifications" class="notification-dialog" aria-labelledby="admin-notifications-title"><div class="card-head"><h2 id="admin-notifications-title">Latest notifications</h2><button type="button" class="icon-btn" id="admin-notifications-close" aria-label="Close notifications">×</button></div><button type="button" id="admin-notifications-read" class="pill">Mark all read</button><p id="admin-notification-status" role="status"></p><div id="admin-notification-list"></div></dialog>
         <main class="content">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
+            {# The "welcome" flash is skipped here because the heading below already greets the admin. #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% set notices = messages|rejectattr(0, 'equalto', 'welcome')|list %}
+            {% if notices %}
             <div class="flash-notice" role="status">
-                {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+                {% for category, message in notices %}<p>{{ message }}</p>{% endfor %}
             </div>
             {% endif %}
             {% endwith %}
-            <h1>Welcome, {{ admin_name or 'Admin' }}!</h1>
+            <div class="page-head">
+                <h1>Welcome to BasuReport, {{ admin_name or 'Admin' }}!</h1>
+                <button type="button" class="btn" id="ann-open">📣 New announcement</button>
+            </div>
 
             {% if st.pending %}
             <div class="attention" role="status">
@@ -83,30 +91,21 @@
 
             <div class="grid">
 
-                <!-- ===== ANNOUNCEMENTS ===== -->
-                <section class="card announce" aria-labelledby="ann-title">
+                <!-- ===== RESIDENTS ===== -->
+                <section class="card residents-card" aria-labelledby="res-title">
                     <div class="card-head">
-                        <h2 id="ann-title">Announcements</h2>
-                        <button type="button" class="btn sm-btn" id="ann-open">+ New</button>
+                        <h2 id="res-title">Residents</h2>
+                        <a class="pill" href="{{ url_for('admin_residents_page') }}">View all</a>
                     </div>
-                    {% if ann %}
-                    <ul class="ann-list">
-                        {% for a in ann %}
-                        <li class="ann-item{{ ' is-pinned' if a.pinned }}">
-                            <div class="ann-top">
-                                <h3>{% if a.pinned %}<span class="pin" title="Pinned" aria-label="Pinned">📌</span>{% endif %}{{ a.title }}</h3>
-                                <time>{{ a.created_at.strftime('%b %d') if a.created_at.strftime is defined else a.created_at }}</time>
-                            </div>
-                            <p>{{ a.message }}</p>
-                            <form method="post" action="/api/admin/announcements/{{ a.id }}" class="ann-del" data-announcement-delete>
-                                <button type="submit" aria-label="Delete announcement: {{ a.title }}">Delete</button>
-                            </form>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% else %}
-                    <div class="ann-empty"><p><strong>No announcements yet.</strong></p><p>Post one to tell residents about schedules, drives, or reminders.</p></div>
-                    {% endif %}
+                    <p class="muted-note left" id="res-summary" role="status">Loading residents…</p>
+                    <ul class="res-list" id="res-list" aria-live="polite"></ul>
+                </section>
+
+                {# The announcements list was removed from the dashboard. This hidden block only keeps
+                   the elements the dashboard script may still look for. #}
+                <section class="announce" hidden style="display:none" aria-hidden="true">
+                    <ul class="ann-list"></ul>
+                    <div class="ann-empty"></div>
                 </section>
 
                 <!-- ===== CALENDAR ===== -->
@@ -200,5 +199,63 @@
 </dialog>
 
 <script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+<script>
+/* Residents card + top-bar shortcut: who is registered and who is online. */
+(() => {
+  const list = document.getElementById('res-list');
+  const summary = document.getElementById('res-summary');
+  const chip = document.getElementById('residents-chip-count');
+  if (!list || !summary) return;
+
+  function render(data) {
+    const members = (data.members || []).slice().sort(
+      (a, b) => (b.online - a.online) || a.fullname.localeCompare(b.fullname)
+    );
+    list.replaceChildren();
+    summary.textContent = members.length
+      ? `${data.online} online · ${data.total} registered`
+      : 'No residents have signed up yet.';
+    if (chip) chip.textContent = `· ${data.online} online`;
+
+    members.slice(0, 6).forEach(member => {
+      const item = document.createElement('li');
+      item.className = 'res-item';
+
+      const who = document.createElement('div');
+      who.className = 'res-name';
+      const name = document.createElement('strong');
+      name.textContent = member.fullname;
+      const email = document.createElement('span');
+      email.textContent = member.email;
+      who.append(name, email);
+
+      const presence = document.createElement('span');
+      presence.className = 'presence' + (member.online ? ' online' : '');
+      presence.append(document.createElement('i'), member.online ? 'Online' : 'Offline');
+
+      item.append(who, presence);
+      list.append(item);
+    });
+  }
+
+  async function load() {
+    if (document.hidden) return;
+    try {
+      const response = await fetch('/api/admin/members', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error();
+      render(data);
+    } catch (error) {
+      summary.textContent = 'Could not load residents.';
+    }
+  }
+
+  load();
+  setInterval(load, 30000);
+  document.addEventListener('visibilitychange', load);
+})();
+</script>
 </body>
 </html>

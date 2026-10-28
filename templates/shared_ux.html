@@ -1,5 +1,44 @@
 <link rel="icon" type="image/png" sizes="192x192"
       href="{{ url_for('static', filename='icons/icon-192.png') }}">
+<link rel="icon" type="image/png" sizes="32x32"
+      href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+<link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" sizes="any">
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
 <script src="{{ url_for('static', filename='js/theme_init.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/ux.css') }}">
 <script src="{{ url_for('static', filename='js/shared_theme.js') }}" defer></script>
+
+<style>
+  /* BasuReport logo shown next to the name in headers and sidebars */
+  .brand-logo { display:inline-block; width:34px; height:34px; flex:none; object-fit:contain;
+                border-radius:50%; vertical-align:middle; margin-right:.4rem; }
+</style>
+<script>
+  /* Every page includes this file, so swap the old recycle-symbol text logo for the real
+     logo image everywhere, including pages that were not edited by hand. */
+  document.addEventListener('DOMContentLoaded', function () {
+    var src = {{ url_for('static', filename='images/logo.png')|tojson }};
+    document.querySelectorAll('.brand, .logo, .logo-mark').forEach(function (el) {
+      if (el.querySelector('img.brand-logo')) return;
+      var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      var node;
+      while ((node = walker.nextNode())) {
+        if (node.nodeValue.indexOf('\u267B') === -1) continue;
+        var img = document.createElement('img');
+        img.className = 'brand-logo';
+        img.src = src;
+        img.alt = '';
+        img.width = 34;
+        img.height = 34;
+        var rest = node.nodeValue.replace(/\u267B\uFE0F?/, '');
+        if (!rest.trim() && node.parentNode === el && el.classList.contains('logo-mark')) {
+          el.replaceWith(img);
+        } else {
+          node.nodeValue = rest.replace(/^\s+/, '');
+          node.parentNode.insertBefore(img, node);
+        }
+        break;
+      }
+    });
+  });
+</script>

@@ -17,7 +17,7 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar" aria-label="Resident navigation">
         <div class="logo">
-            <span class="logo-mark">♻</span>
+            <img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="34" height="34">
             <span>Basu<span class="brand-accent">Report</span></span>
         </div>
 
@@ -130,10 +130,10 @@
 
             <div class="welcome-card">
                 <div class="welcome-text">
-                    <span class="eyebrow">WELCOME TO BASUREPORT</span>
+                    <span class="eyebrow">YOUR COMMUNITY DASHBOARD</span>
 
                     <h1>
-                        Hello, <span>{{ resident_name or "Resident" }}!</span>
+                        Welcome to BasuReport, <span>{{ resident_name or "Resident" }}!</span>
                     </h1>
 
                     <p>
@@ -701,6 +701,119 @@
         </form>
     </div>
 </div>
+
+<!-- ANNOUNCEMENT POP-UP (shows new admin announcements at the top of the screen) -->
+<style>
+.ann-popup-layer { position:fixed; top:0; left:0; right:0; z-index:2000; display:flex; justify-content:center; padding:.9rem; pointer-events:none; }
+.ann-popup-layer[hidden] { display:none; }
+.ann-popup { pointer-events:auto; width:min(560px,100%); background:#fff; color:#1c2a22; border:1px solid #cfe5d7; border-top:5px solid #2e9e5b; border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.28); padding:1rem 1.1rem 1.1rem; transform:translateY(-130%); opacity:0; transition:transform .35s ease, opacity .35s ease; }
+.ann-popup.is-open { transform:none; opacity:1; }
+.ann-popup-head { display:flex; align-items:center; justify-content:space-between; gap:.6rem; }
+.ann-popup-label { font-size:.74rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#2e9e5b; }
+.ann-popup-close { border:0; background:none; font-size:1.5rem; line-height:1; cursor:pointer; color:#51615a; }
+.ann-popup-list { display:grid; gap:.7rem; margin:.5rem 0 .9rem; max-height:45vh; overflow-y:auto; }
+.ann-popup-item h3 { margin:0; font-size:1.02rem; color:#1c2a22; }
+.ann-popup-item p { margin:.2rem 0 0; color:#3d4d45; font-size:.92rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+.ann-popup-more { margin:0; color:#6a7a71; font-size:.82rem; }
+.ann-popup-actions { display:flex; justify-content:flex-end; }
+.ann-popup-ok { border:0; background:#2e9e5b; color:#fff; font-weight:700; padding:.55rem 1.3rem; border-radius:99px; cursor:pointer; }
+@media (prefers-reduced-motion:reduce) { .ann-popup { transition:none; } }
+</style>
+<div class="ann-popup-layer" id="ann-popup-layer" hidden>
+    <div class="ann-popup" id="ann-popup" role="alertdialog"
+         aria-labelledby="ann-popup-label" aria-describedby="ann-popup-list">
+        <div class="ann-popup-head">
+            <span class="ann-popup-label" id="ann-popup-label">📣 New announcement</span>
+            <button type="button" class="ann-popup-close" id="ann-popup-close"
+                    aria-label="Close announcement">×</button>
+        </div>
+        <div class="ann-popup-list" id="ann-popup-list"></div>
+        <div class="ann-popup-actions">
+            <button type="button" class="ann-popup-ok" id="ann-popup-ok">Got it</button>
+        </div>
+    </div>
+</div>
+<script>
+(() => {
+  const layer = document.getElementById('ann-popup-layer');
+  const box = document.getElementById('ann-popup');
+  const list = document.getElementById('ann-popup-list');
+  const label = document.getElementById('ann-popup-label');
+  if (!layer || !box || !list) return;
+
+  // Remember which announcements this resident already dismissed (per account, per browser).
+  const KEY = 'basureport_seen_announcements_' + {{ (session.get('resident_email') or '')|tojson }};
+  const MAX_SHOWN = 3;
+  let pendingIds = [];
+  let isOpen = false;
+
+  function readSeen() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (error) { return []; }
+  }
+  function writeSeen(ids) {
+    try { localStorage.setItem(KEY, JSON.stringify(ids.slice(-100))); } catch (error) {}
+  }
+  const seen = new Set(readSeen());
+
+  function close() {
+    pendingIds.forEach(id => seen.add(id));
+    writeSeen([...seen]);
+    pendingIds = [];
+    box.classList.remove('is-open');
+    setTimeout(() => { layer.hidden = true; isOpen = false; }, 350);
+  }
+
+  function show(items) {
+    list.replaceChildren();
+    items.slice(0, MAX_SHOWN).forEach(item => {
+      const wrap = document.createElement('div');
+      wrap.className = 'ann-popup-item';
+      const title = document.createElement('h3');
+      title.textContent = item.title;
+      const message = document.createElement('p');
+      message.textContent = item.message;
+      wrap.append(title, message);
+      list.append(wrap);
+    });
+    if (items.length > MAX_SHOWN) {
+      const more = document.createElement('p');
+      more.className = 'ann-popup-more';
+      more.textContent = `…and ${items.length - MAX_SHOWN} more in Community announcements on your home page.`;
+      list.append(more);
+    }
+    pendingIds = items.map(item => item.id);
+    label.textContent = items.length > 1 ? '📣 New announcements' : '📣 New announcement';
+    layer.hidden = false;
+    isOpen = true;
+    requestAnimationFrame(() => box.classList.add('is-open'));
+    document.getElementById('ann-popup-ok').focus();
+  }
+
+  async function check() {
+    if (isOpen || document.hidden) return;
+    try {
+      const response = await fetch('/api/resident/announcements', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!data.success) return;
+      const fresh = (data.announcements || []).filter(item => !seen.has(item.id));
+      if (fresh.length) show(fresh);
+    } catch (error) {}
+  }
+
+  document.getElementById('ann-popup-ok').addEventListener('click', close);
+  document.getElementById('ann-popup-close').addEventListener('click', close);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && isOpen) close();
+  });
+
+  check();
+  setInterval(check, 30000);
+  document.addEventListener('visibilitychange', check);
+})();
+</script>
 
 <script src="{{ url_for('static', filename='js/resident_home.js') }}"></script>
 
