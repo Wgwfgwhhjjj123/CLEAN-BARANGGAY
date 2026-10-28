@@ -49,7 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     wrap.append(input);
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = 'Show';
+    button.className = 'password-reveal-toggle';
+    button.innerHTML =
+      '<svg class="eye-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path>' +
+      '<circle cx="12" cy="12" r="3"></circle></svg>' +
+      '<svg class="eye-off-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>' +
+      '<path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a15.8 15.8 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10 10 0 0 0 3.3-.6"></path></svg>';
     button.setAttribute('aria-label', 'Show password');
     button.setAttribute('aria-controls', input.id);
     button.setAttribute('aria-pressed', 'false');
@@ -57,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     button.addEventListener('click', () => {
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      button.textContent = show ? 'Hide' : 'Show';
       button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
       button.setAttribute('aria-pressed', String(show));
     });

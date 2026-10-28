@@ -6,7 +6,11 @@ html { scroll-behavior:smooth; }
 :root[data-theme="dark"] body.dark-mode { --text:#dce6df; --muted:#a5b7aa; --border:#394b3f; --white:#1c2721; background:#151d19; }
 .password-reveal { position:relative; }
 .password-reveal input { padding-right:5rem !important; }
-.password-reveal button { position:absolute; right:.35rem; top:50%; transform:translateY(-50%); min-height:44px; padding:.4rem .7rem; background:transparent; border:0; color:inherit; font:inherit; font-weight:600; cursor:pointer; border-radius:8px; }
+.password-reveal button { position:absolute; right:.35rem; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:36px; height:36px; min-height:36px; margin:0; padding:0; border:0; border-radius:8px; background:transparent; box-shadow:none; color:inherit; cursor:pointer; }
+.password-reveal button:hover { transform:translateY(-50%); background:var(--surface-2,#eef4f0); box-shadow:none; }
+.password-reveal button svg { display:block; width:20px; height:20px; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; stroke-width:1.8; }
+.password-reveal button .eye-off-icon, .password-reveal button[aria-pressed="true"] .eye-icon { display:none; }
+.password-reveal button[aria-pressed="true"] .eye-off-icon { display:block; }
 button, a, input, textarea { -webkit-tap-highlight-color:transparent; }
 :focus-visible { outline:3px solid #659f7b; outline-offset:3px; }
 .cleanup-photos { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin:1.5rem 0; }
