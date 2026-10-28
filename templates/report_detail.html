@@ -6,4 +6,6 @@
 <main class="content report-content"><section class="card section-card"><p class="eyebrow">YOUR REPORT · {{ report.created_at }}</p><div class="report-heading"><h1>{{ report.sitio }}</h1><span class="status-badge status-{{ report.status|lower|replace(' ', '-') }}">{{ report.status }}</span></div><p>{{ report.id }}</p><p class="feedback-comment">{{ report.description }}</p>
 <ol class="cleanup-steps" aria-label="Cleanup progress">{% for step in ['Pending', 'Accepted', 'In Progress', 'Completed'] %}<li class="{{ 'current' if report.status == step }}" {{ 'aria-current=step' if report.status == step }}>{{ step }}</li>{% endfor %}</ol>
 {% if report.status == 'Rejected' %}<p role="status">The barangay reviewed and rejected this report.</p>{% endif %}
-{% include 'cleanup_photos.html' %}{% include 'cleanup_feedback.html' %}</section></main></body></html>
+{% include 'cleanup_photos.html' %}
+{# This page is the resident's own report page, so the feedback block always treats the viewer as the resident. #}
+{% with resident_view = true %}{% include 'cleanup_feedback.html' %}{% endwith %}</section></main></body></html>

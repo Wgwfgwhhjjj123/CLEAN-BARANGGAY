@@ -14,28 +14,28 @@
 {# Dashboard values are built from the app's reports and announcements tables. #}
 {% set st = stats %}
 {% set rows = reports %}
-{% set ann = announcements %}
 {% set total = st.total or 0 %}
 {% set pct_cleaned = (st.cleaned / total * 100) if total else 0 %}
 {% set pct_progress = (st.in_progress / total * 100) if total else 0 %}
 {% set pct_pending = (st.pending / total * 100) if total else 0 %}
 {% set pct_accepted = (st.accepted / total * 100) if total else 0 %}
+{% set pct_rejected = (st.rejected / total * 100) if total else 0 %}
 {% set labels = {'pending': 'Pending', 'accepted': 'Accepted', 'in_progress': 'In progress', 'completed': 'Completed', 'rejected': 'Rejected'} %}
 
 <div class="shell">
 
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar" id="sidebar" aria-label="Admin navigation">
-        <a href="{{ url_for('admin_dashboard') }}" class="brand"><img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="34" height="34"> Basu<span>Report</span></a>
+        <a href="{{ url_for('admin_dashboard') }}" class="brand"><img class="brand-logo" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="28" height="28"> Basu<span>Report</span></a>
         <nav>
-            <a href="{{ url_for('admin_dashboard') }}" class="side-link active" aria-current="page"><span class="ico">▦</span>Dashboard</a>
-            <a href="{{ url_for('admin_reports_page') }}" class="side-link"><span class="ico">🗑</span>Reports{% if st.pending %}<span class="count">{{ st.pending }}</span>{% endif %}</a>
-            <a href="{{ url_for('admin_residents_page') }}" class="side-link"><span class="ico">👥</span>Residents</a>
-            <a href="{{ url_for('admin_feedback_page') }}" class="side-link"><span class="ico">★</span>Feedback</a>
-            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link"><span class="ico">✓</span>Transactions</a>
-            <a href="{{ url_for('admin_settings_page') }}" class="side-link"><span class="ico">⚙</span>Settings</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="side-link active" aria-current="page">Dashboard</a>
+            <a href="{{ url_for('admin_reports_page') }}" class="side-link">Reports{% if st.pending %}<span class="count">{{ st.pending }}</span>{% endif %}</a>
+            <a href="{{ url_for('admin_residents_page') }}" class="side-link">Residents</a>
+            <a href="{{ url_for('admin_feedback_page') }}" class="side-link">Feedback</a>
+            <a href="{{ url_for('admin_expected_benefits_page') }}" class="side-link">Transactions</a>
+            <a href="{{ url_for('admin_settings_page') }}" class="side-link">Settings</a>
         </nav>
-        <a href="/logout" class="side-link logout"><span class="ico">⎋</span>Log out</a>
+        <a href="/logout" class="side-link logout">Log out</a>
     </aside>
     <div class="scrim" id="scrim"></div>
 
@@ -44,16 +44,17 @@
         <!-- ===== TOP BAR ===== -->
         <header class="topbar">
             <button id="menu-btn" class="icon-btn menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">☰</button>
-            {# The report search box was replaced by the residents shortcut. The hidden
-               input stays only so the dashboard script can still find #search. #}
+            {# Hidden input stays only so the dashboard script can still find #search. #}
             <input type="search" id="search" hidden aria-hidden="true" tabindex="-1" style="display:none">
             <a class="pill residents-chip" href="{{ url_for('admin_residents_page') }}" aria-label="View residents">
-                <span aria-hidden="true">👥</span> Residents <span id="residents-chip-count"></span>
+                Residents <span id="residents-chip-count"></span>
             </a>
             <div class="top-actions">
-                {# Light/dark button removed from the top bar. Hidden stub keeps the theme script happy. #}
+                {# Hidden stub keeps the theme script happy. #}
                 <button id="theme-toggle" type="button" aria-hidden="true" tabindex="-1" style="display:none"></button>
-                <button class="icon-btn bell" type="button" aria-label="Notifications" aria-controls="admin-notifications" aria-haspopup="dialog">🔔<i class="dot" hidden></i></button>
+                <button class="icon-btn bell" type="button" aria-label="Notifications" aria-controls="admin-notifications" aria-haspopup="dialog">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><i class="dot" hidden></i>
+                </button>
                 <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
             </div>
         </header>
@@ -70,54 +71,26 @@
             {% endif %}
             {% endwith %}
             <div class="page-head">
-                <h1>Welcome to BasuReport, {{ admin_name or 'Admin' }}!</h1>
-                <button type="button" class="btn" id="ann-open">📣 New announcement</button>
+                <h1>Welcome, {{ admin_name or 'Admin' }}</h1>
+                <button type="button" class="btn" id="ann-open">New announcement</button>
             </div>
 
             {% if st.pending %}
             <div class="attention" role="status">
                 <p><strong>{{ st.pending }} report{{ 's' if st.pending != 1 }}</strong> {{ 'are' if st.pending != 1 else 'is' }} waiting for cleanup.</p>
-                <button type="button" class="btn" data-jump="pending">Review pending</button>
+                <button type="button" class="link-btn" data-jump="pending">Review pending →</button>
             </div>
             {% endif %}
 
-            <!-- ===== STAT CARDS ===== -->
+            <!-- ===== STATS ===== -->
             <section class="stats" aria-label="Summary">
-                <article class="stat click" data-jump="all" role="button" tabindex="0" aria-label="Show all reports"><div><p>Total reports</p><strong>{{ st.total }}</strong></div><span class="bubble b-green">🗑</span></article>
-                <article class="stat click" data-jump="pending" role="button" tabindex="0" aria-label="Show pending reports"><div><p>Pending</p><strong>{{ st.pending }}</strong></div><span class="bubble b-amber">⏳</span></article>
-                <article class="stat click" data-jump="completed" role="button" tabindex="0" aria-label="Show completed reports"><div><p>Completed</p><strong>{{ st.cleaned }}</strong></div><span class="bubble b-blue">✓</span></article>
-                <article class="stat click" data-jump="accepted" role="button" tabindex="0" aria-label="Show accepted reports"><div><p>Accepted</p><strong>{{ st.accepted }}</strong></div><span class="bubble b-purple">✓</span></article>
+                <article class="stat click" data-jump="all" role="button" tabindex="0" aria-label="Show all reports"><p>Total reports</p><strong>{{ st.total }}</strong></article>
+                <article class="stat click" data-jump="pending" role="button" tabindex="0" aria-label="Show pending reports"><p>Pending</p><strong>{{ st.pending }}</strong></article>
+                <article class="stat click" data-jump="completed" role="button" tabindex="0" aria-label="Show completed reports"><p>Completed</p><strong>{{ st.cleaned }}</strong></article>
+                <article class="stat click" data-jump="accepted" role="button" tabindex="0" aria-label="Show accepted reports"><p>Accepted</p><strong>{{ st.accepted }}</strong></article>
             </section>
 
             <div class="grid">
-
-                <!-- ===== RESIDENTS ===== -->
-                <section class="card residents-card" aria-labelledby="res-title">
-                    <div class="card-head">
-                        <h2 id="res-title">Residents</h2>
-                        <a class="pill" href="{{ url_for('admin_residents_page') }}">View all</a>
-                    </div>
-                    <p class="muted-note left" id="res-summary" role="status">Loading residents…</p>
-                    <ul class="res-list" id="res-list" aria-live="polite"></ul>
-                </section>
-
-                {# The announcements list was removed from the dashboard. This hidden block only keeps
-                   the elements the dashboard script may still look for. #}
-                <section class="announce" hidden style="display:none" aria-hidden="true">
-                    <ul class="ann-list"></ul>
-                    <div class="ann-empty"></div>
-                </section>
-
-                <!-- ===== CALENDAR ===== -->
-                <section class="card calendar" data-dates='{{ (report_dates or [])|tojson }}'>
-                    <div class="card-head">
-                        <button class="icon-btn sm" id="cal-prev" aria-label="Previous month">‹</button>
-                        <h2 id="cal-title">Month</h2>
-                        <button class="icon-btn sm" id="cal-next" aria-label="Next month">›</button>
-                    </div>
-                    <div class="cal-grid" id="cal-grid" role="grid"></div>
-                    <p class="legend"><i class="dot-g"></i> Days with new reports</p>
-                </section>
 
                 <!-- ===== REPORTS TABLE ===== -->
                 <section class="card table-card" id="reports">
@@ -152,28 +125,47 @@
                     </div>
                 </section>
 
-                <!-- ===== SUMMARY DONUT ===== -->
-                <section class="card summary">
-                    <div class="card-head"><h2>Summary</h2></div>
-                    <div class="sum-body">
-                    <div class="donut" role="img"
-                         aria-label="{{ st.cleaned }} completed, {{ st.in_progress }} in progress, {{ st.accepted }} accepted, {{ st.pending }} pending, {{ st.rejected }} rejected"
-                         style="--a: {{ pct_cleaned }}%; --b: {{ pct_cleaned + pct_progress }}%; --c: {{ pct_cleaned + pct_progress + pct_accepted }}%; --d: {{ pct_cleaned + pct_progress + pct_accepted + pct_pending }}%;"><span>{{ st.total }}<small>reports</small></span></div>
-                    <ul class="key">
-                        <li><i class="k-ok"></i>Completed<b>{{ st.cleaned }}</b></li>
-                        <li><i class="k-warn"></i>In progress<b>{{ st.in_progress }}</b></li>
-                        <li><i class="k-info"></i>Accepted<b>{{ st.accepted }}</b></li>
-                        <li><i class="k-pending"></i>Pending<b>{{ st.pending }}</b></li>
-                        <li><i class="k-rejected"></i>Rejected<b>{{ st.rejected }}</b></li>
-                    </ul>
+                <!-- ===== OVERVIEW (replaces the donut + ring) ===== -->
+                <section class="card overview">
+                    <div class="card-head">
+                        <h2>Cleanup rate</h2>
+                        <strong class="rate">{{ pct_cleaned|round|int }}%</strong>
                     </div>
+                    <div class="bar" role="img" aria-label="{{ st.cleaned }} completed, {{ st.in_progress }} in progress, {{ st.accepted }} accepted, {{ st.pending }} pending, {{ st.rejected }} rejected">
+                        <span class="k-ok" style="width: {{ pct_cleaned }}%"></span>
+                        <span class="k-warn" style="width: {{ pct_progress }}%"></span>
+                        <span class="k-info" style="width: {{ pct_accepted }}%"></span>
+                        <span class="k-pending" style="width: {{ pct_pending }}%"></span>
+                        <span class="k-rejected" style="width: {{ pct_rejected }}%"></span>
+                    </div>
+                    <ul class="key">
+                        <li><i class="k-ok"></i>Completed <b>{{ st.cleaned }}</b></li>
+                        <li><i class="k-warn"></i>In progress <b>{{ st.in_progress }}</b></li>
+                        <li><i class="k-info"></i>Accepted <b>{{ st.accepted }}</b></li>
+                        <li><i class="k-pending"></i>Pending <b>{{ st.pending }}</b></li>
+                        <li><i class="k-rejected"></i>Rejected <b>{{ st.rejected }}</b></li>
+                    </ul>
                 </section>
 
-                <!-- ===== PROGRESS RING ===== -->
-                <section class="card progress">
-                    <div class="card-head"><h2>Cleanup rate</h2></div>
-                    <div class="ring" role="img" aria-label="{{ pct_cleaned|round|int }} percent cleaned" style="--p: {{ pct_cleaned }}%;"><span>{{ pct_cleaned|round|int }}%<small>cleaned</small></span></div>
-                    <p class="muted-note">Share of all reports that have been cleaned and have an "after" photo.</p>
+                <!-- ===== RESIDENTS ===== -->
+                <section class="card residents-card" aria-labelledby="res-title">
+                    <div class="card-head">
+                        <h2 id="res-title">Residents</h2>
+                        <a class="pill" href="{{ url_for('admin_residents_page') }}">View all</a>
+                    </div>
+                    <p class="muted-note left" id="res-summary" role="status">Loading residents…</p>
+                    <ul class="res-list" id="res-list" aria-live="polite"></ul>
+                </section>
+
+                <!-- ===== CALENDAR ===== -->
+                <section class="card calendar" data-dates='{{ (report_dates or [])|tojson }}'>
+                    <div class="card-head">
+                        <button class="icon-btn sm" id="cal-prev" aria-label="Previous month">‹</button>
+                        <h2 id="cal-title">Month</h2>
+                        <button class="icon-btn sm" id="cal-next" aria-label="Next month">›</button>
+                    </div>
+                    <div class="cal-grid" id="cal-grid" role="grid"></div>
+                    <p class="legend"><i class="dot-g"></i> Days with new reports</p>
                 </section>
 
             </div>

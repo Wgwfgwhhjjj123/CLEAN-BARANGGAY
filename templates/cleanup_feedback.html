@@ -1,6 +1,7 @@
+{% set is_admin_view = session.get('is_admin') and not resident_view %}
 {% if report.rating %}
-<section class="cleanup-feedback"><h2>{{ 'Resident feedback' if session.get('is_admin') else 'Your feedback' }}</h2><p class="rating-value" aria-label="{{ report.rating }} out of 5 stars">{{ '★' * report.rating }}{{ '☆' * (5 - report.rating) }} · {{ report.rating }}/5</p><p class="feedback-comment">{{ report.feedback or 'No comment added.' }}</p><small>{{ report.feedback_at }}</small></section>
-{% elif report.status == 'Completed' and not session.get('is_admin') %}
+<section class="cleanup-feedback"><h2>{{ 'Resident feedback' if is_admin_view else 'Your feedback' }}</h2><p class="rating-value" aria-label="{{ report.rating }} out of 5 stars">{{ '★' * report.rating }}{{ '☆' * (5 - report.rating) }} · {{ report.rating }}/5</p><p class="feedback-comment">{{ report.feedback or 'No comment added.' }}</p><small>{{ report.feedback_at }}</small></section>
+{% elif report.status == 'Completed' and not is_admin_view %}
 <form class="cleanup-feedback" action="{{ url_for('submit_report_feedback', report_id=report.id) }}" method="post" data-feedback-form>
 <input type="hidden" name="feedback_token" value="{{ feedback_token }}"><h2>How was the cleanup?</h2><p>Your rating and comments go to the barangay administrator.</p>
 <fieldset class="rating-options"><legend>Cleanup rating</legend>{% for n in range(1, 6) %}<label><input type="radio" name="rating" value="{{ n }}" required> {{ n }} ★</label>{% endfor %}</fieldset>
