@@ -1,6 +1,6 @@
 /* BasuReport sign-up: transparent green glass card over a green background. */
 .signup-page {
-    --card: rgba(20, 110, 70, .38);          /* transparent green box */
+    --card: rgba(20, 110, 70, .30);          /* transparent green box */
     --card-border: rgba(255, 255, 255, .28);
     --ink: #f2f5fa;
     --muted: #d4efe3;
@@ -19,7 +19,9 @@ body.signup-page {
     padding: 5.5rem 1.25rem 3rem;
     background:
         var(--bg-photo) center / cover no-repeat fixed,
-        linear-gradient(172deg, #1f8a4c 0 55%, #6cc04a 55% 100%) fixed;
+        radial-gradient(60% 50% at 85% 30%, rgba(190, 255, 120, .55), transparent 70%) fixed,
+        radial-gradient(70% 45% at 15% 95%, rgba(120, 220, 70, .65), transparent 70%) fixed,
+        linear-gradient(180deg, #14683c 0%, #1f9a50 55%, #4fbf3f 100%) fixed;
     font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
     color: var(--ink);
     transition: opacity .4s ease, background .25s;
@@ -27,8 +29,13 @@ body.signup-page {
 :root[data-theme="dark"] body.signup-page {
     background:
         var(--bg-photo) center / cover no-repeat fixed,
-        linear-gradient(172deg, #0b3d25 0 55%, #1d6b32 55% 100%) fixed;
+        radial-gradient(60% 50% at 85% 30%, rgba(190, 255, 120, .55), transparent 70%) fixed,
+        radial-gradient(70% 45% at 15% 95%, rgba(120, 220, 70, .65), transparent 70%) fixed,
+        linear-gradient(180deg, #14683c 0%, #1f9a50 55%, #4fbf3f 100%) fixed;
 }
+
+/* dark mode button removed */
+.site-theme-toggle { display: none !important; }
 body.signup-page.fade-out { opacity: 0; }
 .signup-page *, .signup-page *::before, .signup-page *::after { box-sizing: border-box; }
 .signup-page .sr-only {

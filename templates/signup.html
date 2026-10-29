@@ -12,12 +12,6 @@
 
 <body class="signup-page">
 
-    <button class="site-theme-toggle" id="site-theme-toggle" type="button"
-            aria-label="Switch to dark mode" aria-pressed="false">
-        <span class="site-theme-icon" aria-hidden="true">☾</span>
-        <span class="site-theme-label">Dark mode</span>
-    </button>
-
     <div class="signup-card">
 
         <!-- forest picture on the right (drawn in static/images/signup-forest.svg) -->
@@ -132,6 +126,23 @@
     </div>
 
     <script>
+    /* Keep only ONE show-password button per field (shared_ux.html may add another) */
+    (function () {
+        function dedupe() {
+            document.querySelectorAll('.signup-page .field').forEach(function (field) {
+                var input = field.querySelector('input[type="password"], input[data-pw]');
+                if (!input) return;
+                field.querySelectorAll('button, [class*="eye"], [class*="toggle"], [class*="show-pass"]').forEach(function (el) {
+                    if (!el.hasAttribute('data-eye') && !el.classList.contains('eye-btn') && el !== input) el.remove();
+                });
+            });
+        }
+        dedupe();
+        document.addEventListener('DOMContentLoaded', dedupe);
+        window.addEventListener('load', dedupe);
+        new MutationObserver(dedupe).observe(document.body, { childList: true, subtree: true });
+    })();
+
     /* Show / hide password buttons */
     document.querySelectorAll('[data-eye]').forEach(function (button) {
         button.addEventListener('click', function () {
