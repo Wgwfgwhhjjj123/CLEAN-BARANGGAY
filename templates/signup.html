@@ -133,7 +133,8 @@
                 var input = field.querySelector('input[type="password"], input[data-pw]');
                 if (!input) return;
                 field.querySelectorAll('button, [class*="eye"], [class*="toggle"], [class*="show-pass"]').forEach(function (el) {
-                    if (!el.hasAttribute('data-eye') && !el.classList.contains('eye-btn') && el !== input) el.remove();
+                    if (el.closest('[data-eye]') || el.classList.contains('field-icon') || el === input) return;
+                    el.remove();
                 });
             });
         }
