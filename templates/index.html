@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>BasuReport | Report Waste, Create Change</title>
     <meta name="description" content="Report garbage concerns in your barangay and track the cleanup.">
-    <meta name="theme-color" content="#2e9e5b">
+    <meta name="theme-color" content="#2b6a3b">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
@@ -41,6 +41,7 @@
             <ul class="nav-links">
                 <li><a href="#home" class="nav-link active">Home</a></li>
                 <li><a href="#how" class="nav-link">How it works</a></li>
+                <li><a href="/signup" class="nav-register page-transition">Register</a></li>
                 <li><a href="#about" class="nav-link">About</a></li>
             </ul>
         </nav>
@@ -58,26 +59,52 @@
 
         <!-- HERO -->
         <section class="hero" id="home">
-            <div class="hero-content">
-                <p class="eyebrow">A cleaner community starts here</p>
-                <h1>Report Waste.<br><span>Create Change.</span></h1>
-                <p class="hero-description">
-                    Help keep your community clean and safe. BasuReport makes it easier
-                    to report waste concerns and take part in building a cleaner, greener,
-                    and healthier barangay.
-                </p>
-                <div class="hero-actions">
-                    <a href="/login" class="primary-btn page-transition">Report waste <span aria-hidden="true">→</span></a>
-                    <a href="/login?next=/my-reports" class="secondary-btn page-transition">Track my report</a>
-                    <a href="#about" class="text-link">Discover BasuReport <span aria-hidden="true">↗</span></a>
+            <div class="hero-decor" aria-hidden="true">
+                <span class="ring ring-a"></span>
+                <span class="ring ring-b"></span>
+                <span class="ring ring-c"></span>
+                <svg class="squiggle squiggle-a" viewBox="0 0 80 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 6c4-6 8-6 12 0s8 6 12 0 8-6 12 0 8 6 12 0 8-6 12 0"/></svg>
+                <svg class="squiggle squiggle-b" viewBox="0 0 80 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 6c4-6 8-6 12 0s8 6 12 0 8-6 12 0 8 6 12 0 8-6 12 0"/></svg>
+            </div>
+
+            <div class="hero-inner">
+                <div class="hero-content">
+                    <h1>Report Waste.<br><span>Create Change.</span></h1>
+                    <p class="hero-description">
+                        Help keep your community clean and safe. BasuReport makes it easier
+                        to report waste concerns and take part in building a cleaner, greener,
+                        and healthier barangay.
+                    </p>
+
+                    <div class="start-card">
+                        <p class="start-title">Get started</p>
+                        <div class="start-body">
+                            <a href="/login" class="start-btn page-transition">Report waste <span aria-hidden="true">→</span></a>
+                            <a href="/login?next=/my-reports" class="start-btn start-btn-alt page-transition">Track my report</a>
+                            <p class="start-foot">
+                                New here? <a href="/signup" class="page-transition">Create an account</a>
+                                <span class="start-sep" aria-hidden="true"></span>
+                                <a href="#about">About BasuReport</a>
+                            </p>
+
+                            <!-- Pass `stats` from Flask: {total, cleaned, avg_rating}. Safe if missing. -->
+                            <dl class="stats">
+                                <div><dt>Reports submitted</dt><dd data-count="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</dd></div>
+                                <div><dt>Cleaned up</dt><dd data-count="{{ stats.cleaned if stats else 0 }}">{{ stats.cleaned if stats else 0 }}</dd></div>
+                                <div><dt>Average rating</dt><dd>{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
+                            </dl>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Pass `stats` from Flask: {total, cleaned, avg_rating}. Safe if missing. -->
-                <dl class="stats">
-                    <div><dt>Reports submitted</dt><dd data-count="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</dd></div>
-                    <div><dt>Cleaned up</dt><dd data-count="{{ stats.cleaned if stats else 0 }}">{{ stats.cleaned if stats else 0 }}</dd></div>
-                    <div><dt>Average rating</dt><dd>{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
-                </dl>
+                <div class="hero-visual" aria-hidden="true">
+                    <span class="disc disc-a"></span>
+                    <span class="disc disc-b"></span>
+                    <span class="leaf leaf-a"></span>
+                    <span class="leaf leaf-b"></span>
+                    <span class="leaf leaf-c"></span>
+                    <img class="hero-logo no-dim" src="{{ url_for('static', filename='images/logo.png') }}" alt="" width="360" height="360">
+                </div>
             </div>
         </section>
 

@@ -1,0 +1,75 @@
+{# Admin notification bell + popup. Include it inside <div class="top-actions"> on any admin page. #}
+<button class="icon-btn bell" id="admin-bell" type="button" aria-label="Notifications" aria-controls="admin-notifications" aria-haspopup="dialog">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><i class="dot" hidden></i>
+</button>
+<dialog id="admin-notifications" class="notification-dialog" aria-labelledby="admin-notifications-title">
+    <div class="card-head"><h2 id="admin-notifications-title">Latest notifications</h2><button type="button" class="icon-btn" id="admin-notifications-close" aria-label="Close notifications">×</button></div>
+    <button type="button" id="admin-notifications-read" class="pill">Mark all read</button>
+    <p id="admin-notification-status" role="status"></p>
+    <div id="admin-notification-list"></div>
+</dialog>
+<script>
+(() => {
+  const bell = document.getElementById('admin-bell');
+  const dialog = document.getElementById('admin-notifications');
+  const statusEl = document.getElementById('admin-notification-status');
+  const list = document.getElementById('admin-notification-list');
+  const readAll = document.getElementById('admin-notifications-read');
+  const closeBtn = document.getElementById('admin-notifications-close');
+  if (!bell || !dialog || !statusEl || !list) return;
+  const dot = bell.querySelector('.dot');
+
+  async function load() {
+    try {
+      const response = await fetch('/api/admin/notifications');
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not load notifications.');
+      statusEl.textContent = data.notifications.length ? 'Newest first' : 'No notifications yet.';
+      bell.setAttribute('aria-label', `Notifications, ${data.unread} unread`);
+      if (dot) dot.hidden = data.unread === 0;
+      list.replaceChildren();
+      data.notifications.forEach(item => {
+        const article = document.createElement('article');
+        article.className = 'admin-notification-item';
+        const title = document.createElement('h3');
+        title.textContent = item.title;
+        const message = document.createElement('p');
+        message.textContent = item.message;
+        const time = document.createElement('time');
+        time.textContent = item.created_at;
+        article.append(title, message, time);
+        if (item.report_id) {
+          const link = document.createElement('a');
+          link.className = 'pill';
+          link.href = '/admin/report/' + encodeURIComponent(item.report_id);
+          link.textContent = 'Open report →';
+          article.append(link);
+        }
+        list.append(article);
+      });
+    } catch (error) {
+      statusEl.textContent = error.message || 'Could not load notifications.';
+    }
+  }
+
+  bell.addEventListener('click', () => { statusEl.textContent = 'Loading…'; dialog.showModal(); load(); });
+  closeBtn.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  readAll.addEventListener('click', async () => {
+    readAll.disabled = true;
+    try {
+      const response = await fetch('/api/admin/notifications/read-all', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Could not mark notifications read.');
+      await load();
+    } catch (error) {
+      statusEl.textContent = error.message;
+    } finally {
+      readAll.disabled = false;
+    }
+  });
+
+  load();                                   // show the red dot as soon as the page opens
+  setInterval(() => { if (!document.hidden) load(); }, 30000);   // and keep it fresh
+})();
+</script>

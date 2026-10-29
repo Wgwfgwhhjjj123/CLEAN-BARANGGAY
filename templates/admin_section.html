@@ -31,6 +31,7 @@
             <a class="pill" href="{{ url_for('admin_dashboard') }}">← Dashboard</a>
             <div class="top-actions">
                 <button id="theme-toggle" class="icon-btn" type="button" aria-label="Switch to dark mode" aria-pressed="false">🌙</button>
+                {% include 'admin_notifications.html' %}
                 <div class="profile"><span class="avatar" aria-hidden="true">{{ (admin_name or 'Admin')[0]|upper }}</span><span class="pname">{{ admin_name or 'Admin' }}</span></div>
             </div>
         </header>
