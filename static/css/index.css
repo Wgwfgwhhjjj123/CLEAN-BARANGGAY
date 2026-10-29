@@ -238,10 +238,10 @@ body.loading .hero-visual::before, body.loading .hero-visual::after { animation-
 /* rings + squiggles */
 .ring { animation:floatY var(--dur,7s) ease-in-out var(--dly,0s) infinite; }
 .ring-a { --dur:6s; } .ring-b { --dur:8s; --dly:-2s; } .ring-c { --dur:9s; --dly:-4s; }
-@keyframes floatY { 0%,100% { translate:0 0; rotate:0deg; } 50% { translate:6px -16px; rotate:6deg; } }
-.squiggle { animation:wiggle 5s ease-in-out infinite; }
-.squiggle-b { animation-duration:6.5s; animation-delay:-2s; }
-@keyframes wiggle { 0%,100% { translate:0 0; rotate:-4deg; } 50% { translate:10px -8px; rotate:5deg; } }
+@keyframes floatY { 0%,100% { translate:0 0; rotate:0deg; } 50% { translate:3px -9px; rotate:3deg; } }
+.squiggle { animation:wiggle 7s ease-in-out infinite; }
+.squiggle-b { animation-duration:8.5s; animation-delay:-2s; }
+@keyframes wiggle { 0%,100% { translate:0 0; rotate:-3deg; } 50% { translate:6px -5px; rotate:3deg; } }
 
 /* tiny leaves drifting up (made by index.js) */
 .fleaf { position:absolute; bottom:-30px; left:var(--l); width:var(--s); height:var(--s); border-radius:0 100% 0 100%;
@@ -287,25 +287,49 @@ body.loading .hero-visual::before, body.loading .hero-visual::after { animation-
 @keyframes rip { to { transform:scale(1); opacity:0; } }
 
 /* ----- the big logo scene ----- */
-.disc-a { animation:discPulse 7s ease-in-out infinite; }
-@keyframes discPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.04); } }
-.disc-b { animation:bob 6s ease-in-out infinite; translate:calc(var(--px,0) * -18px) calc(var(--py,0) * -18px); transition:translate .3s ease-out; }
-.leaf-a, .leaf-b, .leaf-c { transition:translate .3s ease-out; }
-.leaf-a { translate:calc(var(--px,0) * -26px) calc(var(--py,0) * -26px); animation:sway 5s ease-in-out infinite alternate; }
-.leaf-b { translate:calc(var(--px,0) * -12px) calc(var(--py,0) * -12px); animation:sway 6.5s ease-in-out -2s infinite alternate; }
-.leaf-c { translate:calc(var(--px,0) * -20px) calc(var(--py,0) * -20px); animation:sway 5.8s ease-in-out -1s infinite alternate; }
-@keyframes sway { from { rotate:-7deg; } to { rotate:9deg; } }
+/* everything here stays in its place: only gentle in-place motion */
+.disc-a { animation:discPulse 8s ease-in-out infinite; transition:filter .5s ease; }
+@keyframes discPulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
+.disc-b { animation:bobSoft 7s ease-in-out infinite; }
+@keyframes bobSoft { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+.leaf-a, .leaf-b, .leaf-c { transition:scale .5s var(--ease); }
+.leaf-a { animation:sway 6s ease-in-out infinite alternate; }
+.leaf-b { animation:sway 7.5s ease-in-out -2s infinite alternate; }
+.leaf-c { animation:sway 6.8s ease-in-out -1s infinite alternate; }
+@keyframes sway { from { rotate:-4deg; } to { rotate:5deg; } }
 
-.hero-logo { z-index:1; translate:calc(var(--px,0) * 16px) calc(var(--py,0) * 16px); transition:translate .3s ease-out;
-  animation:logoIn 1.1s cubic-bezier(.2,1.25,.3,1) .3s backwards, logoFloat 6s ease-in-out 1.4s infinite; }
-@keyframes logoIn    { from { opacity:0; transform:scale(.35) rotate(-18deg); } to { opacity:1; transform:none; } }
-@keyframes logoFloat { 0%,100% { transform:translateY(0) rotate(0deg); } 50% { transform:translateY(-14px) rotate(1.2deg); } }
-/* rings that ripple outward from behind the logo */
+/* BIG LOGO: stays centered. Idle = slow breathing + orbit ring.
+   Hover = 3D tilt toward the cursor, light sheen, glowing orbit. */
+.hero-visual { cursor:default; }
+.hero-logo { z-index:1; cursor:pointer;
+  transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--hs,1));
+  transition:transform .3s cubic-bezier(.2,.7,.2,1);
+  animation:logoIn 1s cubic-bezier(.2,1.1,.3,1) .3s backwards, logoBreathe 6s ease-in-out 1.4s infinite; }
+@keyframes logoIn      { from { opacity:0; transform:scale(.6) rotate(-8deg); } to { opacity:1; transform:none; } }
+@keyframes logoBreathe { 0%,100% { scale:1; } 50% { scale:1.025; } }
+
+/* soft rings that ripple outward from behind the logo */
 .hero-visual::before, .hero-visual::after { content:""; position:absolute; z-index:0; left:50%; top:50%; width:70%; aspect-ratio:1;
   margin:-35% 0 0 -35%; border-radius:50%; pointer-events:none;
-  border:2px solid color-mix(in srgb, var(--primary) 55%, transparent); animation:ripple 3.8s ease-out infinite; }
-.hero-visual::after { animation-delay:1.9s; }
-@keyframes ripple { 0% { transform:scale(.97); opacity:.9; } 100% { transform:scale(1.5); opacity:0; } }
+  border:2px solid color-mix(in srgb, var(--primary) 50%, transparent); animation:ripple 4.4s ease-out infinite; }
+.hero-visual::after { animation-delay:2.2s; }
+@keyframes ripple { 0% { transform:scale(.98); opacity:.7; } 100% { transform:scale(1.38); opacity:0; } }
+
+/* orbit ring + light sheen (elements created by index.js) */
+.logo-orbit { position:absolute; z-index:0; left:50%; top:50%; width:88%; aspect-ratio:1; margin:-44% 0 0 -44%; border-radius:50%;
+  border:1.5px dashed color-mix(in srgb, var(--primary) 60%, transparent); opacity:.3; pointer-events:none;
+  animation:orbit 30s linear infinite; transition:opacity .5s ease, scale .6s var(--ease); }
+.logo-orbit i { position:absolute; top:-5px; left:50%; margin-left:-5px; width:10px; height:10px; border-radius:50%; background:var(--primary);
+  box-shadow:0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); }
+@keyframes orbit { to { transform:rotate(360deg); } }
+.logo-shine { position:absolute; z-index:2; left:50%; top:50%; width:70%; aspect-ratio:1; margin:-35% 0 0 -35%; border-radius:50%;
+  pointer-events:none; opacity:0; transition:opacity .35s ease, scale .35s var(--ease);
+  background:radial-gradient(circle at var(--sx,50%) var(--sy,25%), rgba(255,255,255,.6), rgba(255,255,255,0) 55%); mix-blend-mode:overlay; }
+.hero-visual.is-hover { --hs:1.06; }
+.hero-visual.is-hover .logo-orbit { opacity:1; scale:1.03; }
+.hero-visual.is-hover .logo-shine { opacity:1; scale:1.06; }
+.hero-visual.is-hover .disc-a { filter:brightness(1.05) saturate(1.12); }
+.hero-visual.is-hover .leaf-a, .hero-visual.is-hover .leaf-b, .hero-visual.is-hover .leaf-c { scale:1.14; }
 
 /* ----- sections below the hero ----- */
 .reveal { transform:translateY(34px); transition:opacity .8s var(--ease), transform .8s var(--ease); transition-delay:calc(var(--d,0) * 90ms); }
@@ -318,7 +342,7 @@ body.loading .hero-visual::before, body.loading .hero-visual::after { animation-
 .about-visual img { transition:clip-path 1.1s var(--ease) .15s, transform .8s var(--ease); }
 .about-visual.reveal:not(.in) img { clip-path:inset(0 0 100% 0 round var(--radius)); }
 .about-visual:hover img { transform:scale(1.03); }
-.about-badge { animation:bob 5s ease-in-out infinite; }
+.about-badge { animation:bobSoft 7s ease-in-out infinite; }
 .point-icon { transition:transform .3s var(--ease), background .3s, color .3s; }
 .about-point:hover .point-icon { transform:scale(1.12) rotate(-8deg); background:var(--primary); color:var(--primary-ink); }
 .section-link { display:inline-block; transition:transform .25s var(--ease); }
