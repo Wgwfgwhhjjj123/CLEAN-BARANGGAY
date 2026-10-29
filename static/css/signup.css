@@ -1,6 +1,6 @@
 /* BasuReport sign-up: transparent green glass card over a green background. */
 .signup-page {
-    --card: rgba(20, 110, 70, .30);          /* transparent green box */
+    --card: rgba(14, 122, 74, .88);          /* transparent green box */
     --card-border: rgba(255, 255, 255, .28);
     --ink: #f2f5fa;
     --muted: #d4efe3;
@@ -18,20 +18,18 @@ body.signup-page {
     place-items: start center;
     padding: 5.5rem 1.25rem 3rem;
     background:
-        var(--bg-photo) center / cover no-repeat fixed,
-        radial-gradient(60% 50% at 85% 30%, rgba(190, 255, 120, .55), transparent 70%) fixed,
-        radial-gradient(70% 45% at 15% 95%, rgba(120, 220, 70, .65), transparent 70%) fixed,
-        linear-gradient(180deg, #14683c 0%, #1f9a50 55%, #4fbf3f 100%) fixed;
+        radial-gradient(40% 35% at 92% 6%, rgba(190, 228, 236, .6), transparent 70%) fixed,
+        radial-gradient(45% 40% at 4% 96%, rgba(250, 238, 220, .9), transparent 70%) fixed,
+        linear-gradient(135deg, #e6f5ee 0%, #f3faf7 50%, #ffffff 100%) fixed;
     font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
     color: var(--ink);
     transition: opacity .4s ease, background .25s;
 }
 :root[data-theme="dark"] body.signup-page {
     background:
-        var(--bg-photo) center / cover no-repeat fixed,
-        radial-gradient(60% 50% at 85% 30%, rgba(190, 255, 120, .55), transparent 70%) fixed,
-        radial-gradient(70% 45% at 15% 95%, rgba(120, 220, 70, .65), transparent 70%) fixed,
-        linear-gradient(180deg, #14683c 0%, #1f9a50 55%, #4fbf3f 100%) fixed;
+        radial-gradient(40% 35% at 92% 6%, rgba(190, 228, 236, .6), transparent 70%) fixed,
+        radial-gradient(45% 40% at 4% 96%, rgba(250, 238, 220, .9), transparent 70%) fixed,
+        linear-gradient(135deg, #e6f5ee 0%, #f3faf7 50%, #ffffff 100%) fixed;
 }
 
 /* dark mode button removed */
@@ -54,7 +52,7 @@ body.signup-page.fade-out { opacity: 0; }
     border: 1px solid var(--card-border);
     -webkit-backdrop-filter: none;
             backdrop-filter: none;
-    box-shadow: 0 30px 70px rgba(5, 40, 20, .35);
+    box-shadow: 0 30px 70px rgba(10, 70, 40, .28);
 }
 
 /* old forest illustration hidden so the glass stays clean */
