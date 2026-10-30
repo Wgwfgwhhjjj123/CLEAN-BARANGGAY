@@ -35,11 +35,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const badge = document.createElement('span');
         badge.id = 'announcementHistoryBadge';
         badge.className = 'announcement-history-badge';
+        badge.setAttribute('aria-label', '0 announcements in history');
         badge.hidden = true;
         titleRow.append(title, badge);
         const sub = document.createElement('p');
         sub.className = 'announcement-history-sub';
-        sub.textContent = 'Older announcements from your barangay.';
+        sub.textContent = 'View announcements that are older than 24 hours.';
         info.append(titleRow, sub);
 
         toggle.type = 'button';
@@ -366,6 +367,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (badge) {
             badge.textContent = String(announcementHistoryCount);
             badge.hidden = !announcementHistoryCount;
+            badge.setAttribute(
+                'aria-label',
+                announcementHistoryCount +
+                    (announcementHistoryCount === 1
+                        ? ' announcement in history'
+                        : ' announcements in history')
+            );
         }
         if (!toggle || !history) return;
         const isOpen = !history.hidden;
