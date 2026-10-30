@@ -2,7 +2,7 @@
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, flash, session, send_from_directory, jsonify
+    url_for, flash, session, send_from_directory, jsonify, Response
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -314,6 +314,93 @@ def db_execute(query, params=()):
 
 
 # ==================================================
+# PERMANENT PHOTO STORAGE (Supabase PostgreSQL)
+# Render's disk is wiped on every redeploy and restart, so photos are
+# stored in the database. The disk copy is only a cache.
+# ==================================================
+
+IMAGE_MIME_TYPES = {
+    "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+    "gif": "image/gif", "webp": "image/webp"
+}
+_images_table_ready = False
+
+IMAGES_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS public.uploaded_images (
+    filename VARCHAR(120) PRIMARY KEY,
+    mime_type VARCHAR(50) NOT NULL,
+    data BYTEA NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.uploaded_images ENABLE ROW LEVEL SECURITY;
+DO $$
+DECLARE api_role TEXT;
+BEGIN
+    FOREACH api_role IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = api_role) THEN
+            EXECUTE format('REVOKE ALL ON public.uploaded_images FROM %I', api_role);
+        END IF;
+    END LOOP;
+END $$;
+"""
+
+
+def ensure_images_table():
+    global _images_table_ready
+    if _images_table_ready:
+        return
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(IMAGES_TABLE_SQL)
+        connection.commit()
+        _images_table_ready = True
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def save_image(file_storage, filename):
+    """Store a photo permanently in the database (disk copy is a cache)."""
+    ensure_images_table()
+    data = file_storage.read()
+    file_storage.stream.seek(0)
+    extension = filename.rsplit(".", 1)[-1].lower()
+
+    db_execute("""
+        INSERT INTO public.uploaded_images (filename, mime_type, data)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (filename) DO UPDATE
+        SET mime_type = EXCLUDED.mime_type, data = EXCLUDED.data
+    """, (
+        filename,
+        IMAGE_MIME_TYPES.get(extension, "application/octet-stream"),
+        data
+    ))
+
+    try:
+        with open(os.path.join(UPLOAD_FOLDER, filename), "wb") as cache_file:
+            cache_file.write(data)
+    except OSError:
+        app.logger.warning("Could not write image cache for %s", filename)
+
+
+def delete_stored_image(filename):
+    """Remove a photo from the database (best effort)."""
+    if not filename:
+        return
+    try:
+        db_execute(
+            "DELETE FROM public.uploaded_images WHERE filename = %s",
+            (filename,)
+        )
+    except Exception:
+        app.logger.exception("Could not delete stored image %s", filename)
+
+
+# ==================================================
 # HELPERS
 # ==================================================
 
@@ -532,6 +619,18 @@ def do_not_cache_pages(response):
     # again when the Back button is used (instead of showing an old sign-in/dashboard page).
     if response.mimetype == "text/html":
         response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.route("/sw.js")
+def service_worker():
+    """Serve the service worker from the site root so it controls every page."""
+    response = send_from_directory(
+        os.path.join(app.root_path, "static"), "sw.js",
+        mimetype="application/javascript"
+    )
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
     return response
 
 
@@ -1346,7 +1445,7 @@ def complete_report(report_id):
 
         extension = original_filename.rsplit(".", 1)[1].lower()
         filename = f"clean_{uuid.uuid4().hex}.{extension}"
-        image.save(os.path.join(UPLOAD_FOLDER, filename))
+        save_image(image, filename)
 
         completed_at = datetime.now().strftime(DATE_FORMAT)
 
@@ -1931,7 +2030,7 @@ def edit_resident_report(report_id):
                 }), 404
 
             if replacement_path:
-                image.save(replacement_path)
+                save_image(image, replacement_filename)
                 old_image = report.get("image")
 
             update_query = """
@@ -1958,6 +2057,8 @@ def edit_resident_report(report_id):
     except Exception:
         if connection:
             connection.rollback()
+        if replacement_filename:
+            delete_stored_image(replacement_filename)
         if replacement_path and os.path.exists(replacement_path):
             try:
                 os.remove(replacement_path)
@@ -1976,6 +2077,7 @@ def edit_resident_report(report_id):
             connection.close()
 
     if replacement_filename and old_image:
+        delete_stored_image(old_image)
         old_image_path = os.path.abspath(
             os.path.join(UPLOAD_FOLDER, old_image)
         )
@@ -2072,6 +2174,7 @@ def permanently_delete_report(report_id, resident_email=None):
         report.get("image"), report.get("clean_image")
     } - {None, ""}
     for filename in image_filenames:
+        delete_stored_image(filename)
         image_path = os.path.abspath(os.path.join(upload_folder, filename))
         if os.path.dirname(image_path) != upload_folder:
             images_removed = False
@@ -2417,7 +2520,7 @@ def submit_report():
                         "Please check the existing report first."
                     )
 
-        image.save(image_path)
+        save_image(image, filename)
 
         report_code = (
             f"BR-{now.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
@@ -2457,6 +2560,7 @@ def submit_report():
 
     except Exception:
         app.logger.exception("Report submission database error")
+        delete_stored_image(filename)
 
         try:
             if os.path.exists(image_path):
@@ -2500,9 +2604,46 @@ def submit_report():
 # DISPLAY UPLOADED IMAGES
 # ==================================================
 
+MISSING_PHOTO_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" '
+    'viewBox="0 0 640 420"><rect width="640" height="420" fill="#EEF2EF"/>'
+    '<text x="320" y="200" text-anchor="middle" font-family="sans-serif" '
+    'font-size="26" fill="#5B6B62">Photo unavailable</text>'
+    '<text x="320" y="238" text-anchor="middle" font-family="sans-serif" '
+    'font-size="16" fill="#8D9A92">This photo was uploaded before permanent '
+    'storage was enabled.</text></svg>'
+)
+
+
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+    safe_name = secure_filename(filename)
+
+    # 1) Permanent copy in the database
+    try:
+        row = db_fetchone(
+            "SELECT mime_type, data FROM public.uploaded_images "
+            "WHERE filename = %s",
+            (safe_name,)
+        )
+    except Exception:
+        row = None
+        app.logger.warning("Could not read stored image %s", safe_name)
+
+    if row:
+        response = Response(bytes(row["data"]), mimetype=row["mime_type"])
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
+
+    # 2) Older photos that still exist on disk
+    disk_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_name)
+    if os.path.isfile(disk_path):
+        return send_from_directory(app.config["UPLOAD_FOLDER"], safe_name)
+
+    # 3) Photo was lost before permanent storage existed
+    response = Response(MISSING_PHOTO_SVG, mimetype="image/svg+xml")
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 # ==================================================
