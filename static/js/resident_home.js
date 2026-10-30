@@ -761,6 +761,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.addEventListener('hashchange', showPageFromHash);
 
+    document.querySelectorAll('.nav-item[data-scroll]').forEach(function (item) {
+        item.addEventListener('click', function (event) {
+            event.preventDefault();
+            const target = document.getElementById(this.dataset.scroll);
+            showPage('home');
+            const clicked = this;
+            window.setTimeout(function () {
+                document.querySelectorAll('.nav-item').forEach(function (nav) {
+                    nav.classList.remove('active');
+                    nav.removeAttribute('aria-current');
+                });
+                clicked.classList.add('active');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+        });
+    });
+
     function closeEditReport() {
         if (!editReportModal) return;
         editReportModal.classList.remove('open');
