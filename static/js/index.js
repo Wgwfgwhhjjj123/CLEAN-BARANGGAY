@@ -78,8 +78,10 @@
       .then(d => {
         if (!d) return;
         if (ratingEl) {
-          ratingEl.textContent = (d.avg_rating ? d.avg_rating.toFixed(1) : '\u2013') + ' \u2605';
-          ratingEl.title = d.rating_count + ' rating(s)';
+          ratingEl.textContent = (typeof d.avg_rating === 'number'
+            ? d.avg_rating.toFixed(1)
+            : '\u2013') + ' \u2605';
+          ratingEl.title = d.rating_count + ' resident rating(s)';
         }
         document.querySelectorAll('[data-count]').forEach((el, i) => {
           const v = i === 0 ? d.total : d.cleaned;
@@ -88,6 +90,7 @@
       })
       .catch(() => {});
   };
+  refreshStats();
   setTimeout(() => setInterval(refreshStats, 30000), 5000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStats(); });
 

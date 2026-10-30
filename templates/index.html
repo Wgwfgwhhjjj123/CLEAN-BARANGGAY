@@ -91,7 +91,12 @@
                             <dl class="stats">
                                 <div><dt>Reports submitted</dt><dd data-count="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</dd></div>
                                 <div><dt>Cleaned up</dt><dd data-count="{{ stats.cleaned if stats else 0 }}">{{ stats.cleaned if stats else 0 }}</dd></div>
-                                <div><dt>Average rating</dt><dd id="stat-rating" title="{{ stats.rating_count if stats else 0 }} rating(s)">{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
+                                <div>
+                                    <dt>Resident average rating</dt>
+                                    <dd id="stat-rating" title="{{ stats.rating_count if stats else 0 }} resident rating(s)">
+                                        {{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating is not none else '–' }} ★
+                                    </dd>
+                                </div>
                             </dl>
                         </div>
                     </div>
@@ -159,6 +164,6 @@
     </footer>
 
     <noscript><style>#loading-screen{display:none}body.loading{overflow:auto}</style></noscript>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/index.js') }}?v=20261030"></script>
 </body>
 </html>

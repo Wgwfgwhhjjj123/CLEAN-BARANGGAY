@@ -1190,6 +1190,14 @@ document.addEventListener('DOMContentLoaded', function () {
         showPageFromHash();
         loadNotifications();
         refreshAnnouncements();
+        const announcementHistoryToggle = document.getElementById(
+            'announcementHistoryToggle'
+        );
+        if (announcementHistoryToggle) {
+            announcementHistoryToggle.addEventListener('click', function () {
+                refreshAnnouncements();
+            });
+        }
         refreshDeletedReports();
         window.setInterval(refreshDeletedReports, 30000);
         window.setInterval(refreshAnnouncements, 60000);

@@ -1223,13 +1223,15 @@ def resident_announcements_api():
                 ).strftime(DATE_FORMAT)
             }
 
-        return jsonify({
+        response = jsonify({
             "success": True,
             "announcements": [serialize_announcement(row) for row in rows],
             "history": [
                 serialize_announcement(row) for row in history_rows
             ]
         })
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        return response
     except Exception:
         app.logger.exception("Load resident announcements error")
         return jsonify({
