@@ -25,7 +25,7 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "change-this-secret-key")
 
 UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER") or os.path.join(app.root_path, "uploads")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -533,6 +533,15 @@ def do_not_cache_pages(response):
     if response.mimetype == "text/html":
         response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.errorhandler(413)
+def file_too_large(error):
+    message = "That photo is too large. Please use a photo under 15 MB."
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"success": False, "message": message}), 413
+    flash(message)
+    return redirect(request.referrer or url_for("resident_home"))
 
 
 # ==================================================
