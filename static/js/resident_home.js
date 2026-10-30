@@ -10,22 +10,49 @@ document.addEventListener('click', function (event) {
     const willOpen = history.hidden || history.style.display === 'none';
     history.hidden = !willOpen;
     history.style.display = willOpen ? '' : 'none';
-    const count = Number(toggle.dataset.count || 0);
-    toggle.textContent = willOpen
-        ? 'Hide announcement history'
-        : 'View announcement history' + (count ? ' (' + count + ')' : '');
+    toggle.textContent = willOpen ? 'Hide history' : 'Show history';
     toggle.setAttribute('aria-expanded', String(willOpen));
 });
 
-/* Start collapsed. */
+/* Build a proper "Announcement history" header with a Hide/Show button. */
 document.addEventListener('DOMContentLoaded', function () {
     const history = document.getElementById('residentAnnouncementHistory');
     const toggle = document.getElementById('announcementHistoryToggle');
     if (!history || !toggle) return;
+
+    if (!document.getElementById('announcementHistoryHeader')) {
+        const header = document.createElement('div');
+        header.id = 'announcementHistoryHeader';
+        header.className = 'announcement-history-header';
+
+        const info = document.createElement('div');
+        info.className = 'announcement-history-info';
+        const titleRow = document.createElement('div');
+        titleRow.className = 'announcement-history-title-row';
+        const title = document.createElement('h3');
+        title.className = 'announcement-history-title';
+        title.textContent = 'Announcement history';
+        const badge = document.createElement('span');
+        badge.id = 'announcementHistoryBadge';
+        badge.className = 'announcement-history-badge';
+        badge.hidden = true;
+        titleRow.append(title, badge);
+        const sub = document.createElement('p');
+        sub.className = 'announcement-history-sub';
+        sub.textContent = 'Older announcements from your barangay.';
+        info.append(titleRow, sub);
+
+        toggle.type = 'button';
+        header.append(info, toggle);
+        history.parentNode.insertBefore(header, history);
+    }
+
+    /* Start collapsed. */
     history.hidden = true;
     history.style.display = 'none';
     toggle.setAttribute('aria-expanded', 'false');
-    toggle.textContent = 'View announcement history';
+    toggle.setAttribute('aria-controls', 'residentAnnouncementHistory');
+    toggle.textContent = 'Show history';
 });
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -335,14 +362,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateAnnouncementHistoryToggle() {
         const toggle = document.getElementById('announcementHistoryToggle');
         const history = document.getElementById('residentAnnouncementHistory');
+        const badge = document.getElementById('announcementHistoryBadge');
+        if (badge) {
+            badge.textContent = String(announcementHistoryCount);
+            badge.hidden = !announcementHistoryCount;
+        }
         if (!toggle || !history) return;
         const isOpen = !history.hidden;
-        const count = announcementHistoryCount
-            ? ' (' + announcementHistoryCount + ')'
-            : '';
-        toggle.textContent = isOpen
-            ? 'Hide announcement history'
-            : 'View announcement history' + count;
+        toggle.textContent = isOpen ? 'Hide history' : 'Show history';
         toggle.setAttribute('aria-expanded', String(isOpen));
     }
 
