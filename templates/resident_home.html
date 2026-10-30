@@ -833,5 +833,41 @@
 
 <script src="{{ url_for('static', filename='js/resident_home.js') }}"></script>
 
+<script>
+/* Announcements sidebar button: go to Home, scroll to the announcements, highlight the button.
+   Delegated on document, so it works without touching resident_home.js. */
+document.addEventListener('click', function (event) {
+    const link = event.target.closest('.nav-item[data-scroll]');
+    if (!link) return;
+    event.preventDefault();
+
+    const target = document.getElementById(link.dataset.scroll);
+    if (!target) return;
+
+    if (typeof window.showPage === 'function') {
+        window.showPage('home');
+    } else {
+        document.querySelectorAll('.page-section').forEach(function (s) {
+            s.classList.toggle('active', s.id === 'home');
+        });
+    }
+
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    if (sidebar) sidebar.classList.remove('open');
+    if (scrim) scrim.classList.remove('show');
+    document.body.classList.remove('sidebar-open');
+
+    window.setTimeout(function () {
+        document.querySelectorAll('.nav-item').forEach(function (nav) {
+            nav.classList.remove('active');
+            nav.removeAttribute('aria-current');
+        });
+        link.classList.add('active');
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+});
+</script>
+
 </body>
 </html>
