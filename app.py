@@ -1203,13 +1203,14 @@ def resident_announcements_api():
             ORDER BY created_at DESC
             LIMIT 10
         """, (active_after,))
+        # History lists every announcement (newest first), including ones
+        # still inside the 24-hour "active" window, so residents never see an empty history.
         history_rows = db_fetchall("""
             SELECT id, title, message, created_by, created_at
             FROM announcements
-            WHERE created_at < %s
             ORDER BY created_at DESC
             LIMIT 50
-        """, (active_after,))
+        """)
 
         def serialize_announcement(row):
             return {
