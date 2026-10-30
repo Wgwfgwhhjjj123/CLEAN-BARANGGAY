@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const sidebar = document.getElementById('sidebar');
     const sidebarScrim = document.getElementById('scrim');
     const menuToggle = document.getElementById('menu-btn');
-    const dashboardSearch = document.getElementById('dashboard-search');
     let reportSuccessToast = document.querySelector('.report-success-toast');
     let residentToastTimeout = null;
     let notifications = [];
@@ -832,18 +831,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    if (dashboardSearch && reportSearch) {
-        dashboardSearch.addEventListener('input', function () {
-            reportSearch.value = dashboardSearch.value;
-            filterReports();
-            if (dashboardSearch.value.trim()) showPage('my-reports');
-            else if (document.activeElement === dashboardSearch) showPage('home');
-        });
-    }
-
     window.clearReportFilters = function () {
         if (reportSearch) reportSearch.value = '';
-        if (dashboardSearch) dashboardSearch.value = '';
         if (statusFilter) statusFilter.value = 'all';
         document.querySelectorAll('[data-report-filter]').forEach(
             function (button) {
