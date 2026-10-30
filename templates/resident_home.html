@@ -269,12 +269,12 @@
                             <div class="form-group">
                                 <label for="phone">Phone Number</label>
                                 <input type="tel" id="phone" name="phone"
-                                       placeholder="+63 912 345 6789"
+                                       placeholder="09123456789"
                                        autocomplete="tel"
-                                       inputmode="tel"
-                                       maxlength="30"
-                                       pattern="[0-9+(). -]{7,30}"
-                                       title="Enter a phone number with 7 to 15 digits."
+                                       inputmode="numeric"
+                                       maxlength="15"
+                                       pattern="[0-9]{7,15}"
+                                       title="Enter a phone number using numbers only (7 to 15 digits)."
                                        required>
                                 <small class="field-hint">
                                     We'll use this number if the cleanup team needs to follow up.
@@ -656,8 +656,10 @@
 
                 <label for="edit-phone">Phone Number</label>
                 <input id="edit-phone" name="phone" type="tel"
-                       inputmode="tel" maxlength="30"
-                       pattern="[0-9+(). -]{7,30}" required>
+                       inputmode="numeric" maxlength="15"
+                       pattern="[0-9]{7,15}"
+                       title="Enter a phone number using numbers only (7 to 15 digits)."
+                       required>
 
                 <div class="edit-report-date-row">
                     <div>
@@ -814,6 +816,20 @@
   setInterval(check, 30000);
   document.addEventListener('visibilitychange', check);
 })();
+</script>
+
+<script>
+/* Phone fields accept digits only: strip anything else as the resident types or pastes. */
+['phone', 'edit-phone'].forEach(id => {
+  const field = document.getElementById(id);
+  if (!field) return;
+  const clean = () => {
+    const digits = field.value.replace(/\D/g, '').slice(0, 15);
+    if (field.value !== digits) field.value = digits;
+  };
+  field.addEventListener('input', clean);
+  field.addEventListener('change', clean);
+});
 </script>
 
 <script src="{{ url_for('static', filename='js/resident_home.js') }}"></script>
