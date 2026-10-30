@@ -20,11 +20,10 @@ def using_postgres():
 def get_db_connection():
     if not using_postgres():
         raise RuntimeError(
-            "SUPABASE_DB_URL is not set. Add it to your .env file "
-            "(Supabase > Connect > Session pooler)."
+            "SUPABASE_DB_URL is not set. Add the Supabase PostgreSQL "
+            "session-pooler URI to the environment."
         )
-    # Disable automatic prepared statements for Supabase poolers.
-    # TLS is required even when a copied URI omits sslmode.
+
     sslmode = conninfo_to_dict(postgres_url()).get("sslmode", "require")
     if sslmode not in {"require", "verify-ca", "verify-full"}:
         sslmode = "require"

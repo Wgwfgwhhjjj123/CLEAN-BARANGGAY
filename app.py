@@ -113,9 +113,8 @@ If you did not request a password reset, ignore this email.
 # ==================================================
 
 def init_db():
-    """Create Supabase tables or repair the existing MySQL schema."""
-    if using_postgres():
-        return init_postgres_db()
+    """Create or repair the Supabase PostgreSQL schema."""
+    return init_postgres_db()
     connection = get_db_connection()
 
     try:
@@ -656,7 +655,7 @@ def get_public_stats():
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT COUNT(*) AS total, "
-                "COALESCE(SUM(status = 'Completed'), 0) AS cleaned, "
+                "COALESCE(SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END), 0) AS cleaned, "
                 "AVG(rating) AS avg_rating, "
                 "COUNT(rating) AS rating_count "
                 "FROM reports WHERE deleted_at IS NULL"
