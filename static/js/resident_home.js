@@ -1,3 +1,33 @@
+/* Announcement history show/hide.
+   Delegated on document so it works even if other page code fails first. */
+document.addEventListener('click', function (event) {
+    const toggle = event.target.closest('#announcementHistoryToggle');
+    if (!toggle) return;
+    const history = document.getElementById('residentAnnouncementHistory');
+    if (!history) return;
+    event.preventDefault();
+
+    const willOpen = history.hidden || history.style.display === 'none';
+    history.hidden = !willOpen;
+    history.style.display = willOpen ? '' : 'none';
+    const count = Number(toggle.dataset.count || 0);
+    toggle.textContent = willOpen
+        ? 'Hide announcement history'
+        : 'View announcement history' + (count ? ' (' + count + ')' : '');
+    toggle.setAttribute('aria-expanded', String(willOpen));
+});
+
+/* Start collapsed. */
+document.addEventListener('DOMContentLoaded', function () {
+    const history = document.getElementById('residentAnnouncementHistory');
+    const toggle = document.getElementById('announcementHistoryToggle');
+    if (!history || !toggle) return;
+    history.hidden = true;
+    history.style.display = 'none';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.textContent = 'View announcement history';
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const imageInput = document.getElementById('garbage-image');
     const imagePreview = document.getElementById('image-preview');
@@ -319,6 +349,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderAnnouncementHistory(list, announcements) {
         announcementHistoryItems = announcements;
         announcementHistoryCount = announcements.length;
+        const countToggle = document.getElementById('announcementHistoryToggle');
+        if (countToggle) countToggle.dataset.count = String(announcements.length);
         list.replaceChildren();
         updateAnnouncementHistoryToggle();
 
@@ -802,27 +834,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const announcementHistory = document.getElementById(
         'residentAnnouncementHistory'
     );
-    if (announcementHistoryToggle && announcementHistory) {
-        announcementHistory.hidden = true;
-        announcementHistoryToggle.type = 'button';
-        announcementHistoryToggle.setAttribute(
-            'aria-controls',
-            'residentAnnouncementHistory'
-        );
-        updateAnnouncementHistoryToggle();
-        announcementHistoryToggle.addEventListener('click', function () {
-            announcementHistory.hidden = !announcementHistory.hidden;
-            if (announcementHistory.hidden) {
-                announcementHistoryVisible = HISTORY_PAGE_SIZE;
-                renderAnnouncementHistory(
-                    announcementHistory,
-                    announcementHistoryItems
-                );
-            }
-            updateAnnouncementHistoryToggle();
-        });
-    }
-
     if (imageInput) {
         imageInput.addEventListener('change', function () {
             const file = this.files && this.files[0];
