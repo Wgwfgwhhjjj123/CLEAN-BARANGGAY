@@ -259,11 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'No new announcements from your barangay.'
             );
             if (historyList) {
-                renderAnnouncementList(
-                    historyList,
-                    data.history || [],
-                    'No older announcements yet.'
-                );
+                renderAnnouncementHistory(historyList, data.history || []);
             }
         } catch (error) {
             announcementList.replaceChildren();
@@ -273,6 +269,121 @@ document.addEventListener('DOMContentLoaded', function () {
                 error.message || 'Could not load announcements.';
             announcementList.appendChild(failure);
             if (historyList) historyList.replaceChildren();
+        }
+    }
+
+    const HISTORY_PAGE_SIZE = 6;
+    let announcementHistoryCount = 0;
+    let announcementHistoryVisible = HISTORY_PAGE_SIZE;
+    let announcementHistoryItems = [];
+
+    function parseAnnouncementDate(value) {
+        const timestamp = String(value || '');
+        const parsed = new Date(timestamp.replace(' ', 'T'));
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    function announcementDayLabel(date) {
+        if (!date) return 'Earlier';
+        const today = new Date();
+        const startOf = function (d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        };
+        const diffDays = Math.round(
+            (startOf(today) - startOf(date)) / 86400000
+        );
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        return new Intl.DateTimeFormat(undefined, {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        }).format(date);
+    }
+
+    function updateAnnouncementHistoryToggle() {
+        const toggle = document.getElementById('announcementHistoryToggle');
+        const history = document.getElementById('residentAnnouncementHistory');
+        if (!toggle || !history) return;
+        const isOpen = !history.hidden;
+        const count = announcementHistoryCount
+            ? ' (' + announcementHistoryCount + ')'
+            : '';
+        toggle.textContent = isOpen
+            ? 'Hide announcement history'
+            : 'View announcement history' + count;
+        toggle.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function renderAnnouncementHistory(list, announcements) {
+        announcementHistoryItems = announcements;
+        announcementHistoryCount = announcements.length;
+        list.replaceChildren();
+        updateAnnouncementHistoryToggle();
+
+        if (!announcements.length) {
+            const empty = document.createElement('p');
+            empty.className = 'resident-announcement-empty';
+            empty.textContent = 'No older announcements yet.';
+            list.appendChild(empty);
+            return;
+        }
+
+        const visibleItems = announcements.slice(0, announcementHistoryVisible);
+        let currentLabel = null;
+        let currentGroup = null;
+
+        visibleItems.forEach(function (announcement) {
+            const date = parseAnnouncementDate(announcement.created_at);
+            const label = announcementDayLabel(date);
+            if (label !== currentLabel) {
+                currentLabel = label;
+                const section = document.createElement('section');
+                section.className = 'announcement-history-day';
+                const heading = document.createElement('h4');
+                heading.className = 'announcement-history-day-label';
+                heading.textContent = label;
+                currentGroup = document.createElement('div');
+                currentGroup.className = 'announcement-history-day-items';
+                section.append(heading, currentGroup);
+                list.appendChild(section);
+            }
+
+            const card = document.createElement('article');
+            card.className = 'resident-announcement';
+            const meta = document.createElement('div');
+            meta.className = 'resident-announcement-meta';
+            const title = document.createElement('h3');
+            title.textContent = announcement.title;
+            const time = document.createElement('time');
+            time.dateTime = String(announcement.created_at || '').replace(' ', 'T');
+            time.textContent = date
+                ? new Intl.DateTimeFormat(undefined, {
+                    hour: 'numeric',
+                    minute: '2-digit'
+                }).format(date)
+                : String(announcement.created_at || '');
+            meta.append(title, time);
+            const message = document.createElement('p');
+            message.textContent = announcement.message;
+            card.append(meta, message);
+            currentGroup.appendChild(card);
+        });
+
+        if (announcements.length > visibleItems.length) {
+            const more = document.createElement('button');
+            more.type = 'button';
+            more.className = 'announcement-history-more';
+            more.textContent =
+                'Show more (' +
+                (announcements.length - visibleItems.length) +
+                ' remaining)';
+            more.addEventListener('click', function () {
+                announcementHistoryVisible += HISTORY_PAGE_SIZE;
+                renderAnnouncementHistory(list, announcementHistoryItems);
+            });
+            list.appendChild(more);
         }
     }
 
@@ -692,16 +803,23 @@ document.addEventListener('DOMContentLoaded', function () {
         'residentAnnouncementHistory'
     );
     if (announcementHistoryToggle && announcementHistory) {
+        announcementHistory.hidden = true;
+        announcementHistoryToggle.type = 'button';
+        announcementHistoryToggle.setAttribute(
+            'aria-controls',
+            'residentAnnouncementHistory'
+        );
+        updateAnnouncementHistoryToggle();
         announcementHistoryToggle.addEventListener('click', function () {
-            const isOpening = announcementHistory.hidden;
-            announcementHistory.hidden = !isOpening;
-            announcementHistoryToggle.setAttribute(
-                'aria-expanded',
-                String(isOpening)
-            );
-            announcementHistoryToggle.textContent = isOpening
-                ? 'Hide announcement history'
-                : 'View announcement history';
+            announcementHistory.hidden = !announcementHistory.hidden;
+            if (announcementHistory.hidden) {
+                announcementHistoryVisible = HISTORY_PAGE_SIZE;
+                renderAnnouncementHistory(
+                    announcementHistory,
+                    announcementHistoryItems
+                );
+            }
+            updateAnnouncementHistoryToggle();
         });
     }
 
