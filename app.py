@@ -647,9 +647,45 @@ def file_too_large(error):
 # HOME AND LOGIN PAGES
 # ==================================================
 
+def get_public_stats():
+    """Live, site-wide numbers for the landing page (all residents' reports and ratings)."""
+    empty = {"total": 0, "cleaned": 0, "avg_rating": None, "rating_count": 0}
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT COUNT(*) AS total, "
+                "COALESCE(SUM(status = 'Completed'), 0) AS cleaned, "
+                "AVG(rating) AS avg_rating, "
+                "COUNT(rating) AS rating_count "
+                "FROM reports WHERE deleted_at IS NULL"
+            )
+            row = cursor.fetchone() or {}
+        return {
+            "total": int(row.get("total") or 0),
+            "cleaned": int(row.get("cleaned") or 0),
+            "avg_rating": round(float(row["avg_rating"]), 1) if row.get("avg_rating") is not None else None,
+            "rating_count": int(row.get("rating_count") or 0),
+        }
+    except Exception:
+        app.logger.exception("Could not load public stats")
+        return empty
+    finally:
+        if connection:
+            connection.close()
+
+
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html", stats=get_public_stats())
+
+
+@app.route("/api/public-stats")
+def public_stats():
+    response = jsonify(get_public_stats())
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.route("/login")

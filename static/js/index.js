@@ -58,16 +58,38 @@
     const end = +el.dataset.count;
     if (!end || reduceMotion) return;
     afterLoader(() => setTimeout(() => {
-      const dur = 1500; let start = null;
+      const dur = 1500; let start = null; el.dataset.animating = '1';
       const step = ts => {
         if (start === null) start = ts;
         const p = Math.min(1, (ts - start) / dur);
         el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))).toLocaleString();
-        if (p < 1) requestAnimationFrame(step);
+        if (p < 1) requestAnimationFrame(step); else delete el.dataset.animating;
       };
       requestAnimationFrame(step);
     }, 1300));   // starts when the stats card has appeared
   });
+
+  /* ---------- Keep the stats fresh (new ratings show without a full reload) ---------- */
+  const ratingEl = document.getElementById('stat-rating');
+  const refreshStats = () => {
+    if (document.hidden) return;
+    fetch('/api/public-stats', { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d) return;
+        if (ratingEl) {
+          ratingEl.textContent = (d.avg_rating ? d.avg_rating.toFixed(1) : '\u2013') + ' \u2605';
+          ratingEl.title = d.rating_count + ' rating(s)';
+        }
+        document.querySelectorAll('[data-count]').forEach((el, i) => {
+          const v = i === 0 ? d.total : d.cleaned;
+          if (!el.dataset.animating) el.textContent = v.toLocaleString();
+        });
+      })
+      .catch(() => {});
+  };
+  setTimeout(() => setInterval(refreshStats, 30000), 5000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshStats(); });
 
   /* ---------- Smooth page transition ---------- */
   document.querySelectorAll('a.page-transition').forEach(a => {

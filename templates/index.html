@@ -91,7 +91,7 @@
                             <dl class="stats">
                                 <div><dt>Reports submitted</dt><dd data-count="{{ stats.total if stats else 0 }}">{{ stats.total if stats else 0 }}</dd></div>
                                 <div><dt>Cleaned up</dt><dd data-count="{{ stats.cleaned if stats else 0 }}">{{ stats.cleaned if stats else 0 }}</dd></div>
-                                <div><dt>Average rating</dt><dd>{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
+                                <div><dt>Average rating</dt><dd id="stat-rating" title="{{ stats.rating_count if stats else 0 }} rating(s)">{{ '%.1f'|format(stats.avg_rating) if stats and stats.avg_rating else '–' }} ★</dd></div>
                             </dl>
                         </div>
                     </div>
