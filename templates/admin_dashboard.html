@@ -121,7 +121,7 @@
                             {% endfor %}
                             </tbody>
                         </table>
-                        <p class="empty" id="empty" hidden>{% if rows %}No reports match your search.{% else %}No reports have been submitted yet.{% endif %}</p>
+                        <p class="empty" id="empty" hidden>{% if rows %}No reports match this filter.{% else %}No reports have been submitted yet.{% endif %}</p>
                     </div>
                 </section>
 
@@ -132,11 +132,11 @@
                         <strong class="rate">{{ pct_cleaned|round|int }}%</strong>
                     </div>
                     <div class="bar" role="img" aria-label="{{ st.cleaned }} completed, {{ st.in_progress }} in progress, {{ st.accepted }} accepted, {{ st.pending }} pending, {{ st.rejected }} rejected">
-                        <span class="k-ok" style="width: {{ pct_cleaned }}%"></span>
-                        <span class="k-warn" style="width: {{ pct_progress }}%"></span>
-                        <span class="k-info" style="width: {{ pct_accepted }}%"></span>
-                        <span class="k-pending" style="width: {{ pct_pending }}%"></span>
-                        <span class="k-rejected" style="width: {{ pct_rejected }}%"></span>
+                        <span class="k-ok" data-w="{{ pct_cleaned }}"></span>
+                        <span class="k-warn" data-w="{{ pct_progress }}"></span>
+                        <span class="k-info" data-w="{{ pct_accepted }}"></span>
+                        <span class="k-pending" data-w="{{ pct_pending }}"></span>
+                        <span class="k-rejected" data-w="{{ pct_rejected }}"></span>
                     </div>
                     <ul class="key">
                         <li><i class="k-ok"></i>Completed <b>{{ st.cleaned }}</b></li>

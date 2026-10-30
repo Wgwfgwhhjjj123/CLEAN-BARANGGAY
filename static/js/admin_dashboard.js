@@ -10,6 +10,12 @@
   side.querySelectorAll('nav a').forEach(link => link.addEventListener('click', () => setSide(false)));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setSide(false); });
 
+  /* ---- cleanup rate bar: widths come from data-w so the template has no Jinja inside CSS ---- */
+  document.querySelectorAll('.bar [data-w]').forEach(el => {
+    const w = parseFloat(el.dataset.w);
+    el.style.width = (Number.isFinite(w) ? w : 0) + '%';
+  });
+
   /* ---- table filter + search ---- */
   const rows = [...document.querySelectorAll('#reports-table tbody tr')];
   const empty = document.getElementById('empty');
