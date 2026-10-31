@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1100" role="img" aria-labelledby="title">
+  <title id="title">Stylized forest background</title>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f9f7c"/>
+      <stop offset=".55" stop-color="#2e6c53"/>
+      <stop offset="1" stop-color="#123b2d"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b573f"/>
+      <stop offset="1" stop-color="#09291f"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1100" fill="url(#sky)"/>
+  <circle cx="610" cy="220" r="105" fill="#d9f2df" opacity=".28"/>
+  <path d="M0 720 C130 650 250 690 370 610 C520 505 660 590 800 510 V1100 H0Z" fill="#174f3b" opacity=".9"/>
+  <path d="M0 820 C150 710 300 790 430 690 C580 575 690 685 800 625 V1100 H0Z" fill="url(#ground)"/>
+  <g fill="#09291f">
+    <path d="M65 760 l95 -300 95 300h-55l85 180H35l85-180z"/>
+    <path d="M250 790 l75 -245 75 245h-45l65 145H215l65-145z"/>
+    <path d="M430 740 l105 -330 105 330h-60l95 200H395l95-200z"/>
+    <path d="M610 805 l65 -210 65 210h-40l55 125H580l55-125z"/>
+  </g>
+  <g fill="#82b894" opacity=".38">
+    <circle cx="130" cy="510" r="42"/><circle cx="90" cy="550" r="48"/><circle cx="175" cy="560" r="55"/>
+    <circle cx="520" cy="470" r="55"/><circle cx="590" cy="510" r="64"/><circle cx="665" cy="515" r="48"/>
+  </g>
+  <rect y="920" width="800" height="180" fill="#071f18"/>
+</svg>

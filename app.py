@@ -9,6 +9,8 @@ from werkzeug.utils import secure_filename
 
 import os
 import uuid
+import base64
+from html import escape
 from database import (
     get_db_connection, using_postgres, init_postgres_db,
     otp_upsert_query, INTEGRITY_ERRORS,
@@ -52,6 +54,46 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "@admin123")
 BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
+def build_branded_email(subject, text_content):
+    logo_path = os.path.join(app.root_path, "static", "images", "logo.png")
+    logo_content = ""
+    try:
+        with open(logo_path, "rb") as logo_file:
+            logo_content = base64.b64encode(logo_file.read()).decode("ascii")
+    except OSError:
+        app.logger.exception("Could not load the email logo")
+
+    safe_content = escape(text_content).replace("\n\n", "<br><br>").replace("\n", "<br>")
+    logo = (
+        '<img src="cid:basureport-logo" alt="BasuReport" '
+        'width="72" height="72" style="display:block;margin:0 auto;">'
+        if logo_content else ""
+    )
+    html_content = f"""<!doctype html>
+<html>
+<body style="margin:0;background:#f4f6f3;font-family:Arial,sans-serif;color:#203128;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f6f3;padding:32px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#ffffff;border-radius:18px;border:1px solid #e3e8e4;overflow:hidden;">
+        <tr><td style="padding:28px 32px 18px;text-align:center;">
+          {logo}
+          <div style="margin-top:12px;font-size:22px;font-weight:700;color:#174d32;">BasuReport</div>
+        </td></tr>
+        <tr><td style="padding:8px 32px 32px;font-size:15px;line-height:1.65;">
+          <div style="font-size:20px;font-weight:700;color:#203128;margin-bottom:16px;">{escape(subject)}</div>
+          <div>{safe_content}</div>
+          <div style="margin-top:28px;padding-top:18px;border-top:1px solid #edf0ed;color:#738078;font-size:12px;text-align:center;">
+            A cleaner community starts with us.
+          </div>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+    return html_content, logo_content
+
+
 def send_email(recipient_email, subject, text_content):
     api_key = os.getenv("BREVO_API_KEY")
     sender_email = os.getenv("MAIL_DEFAULT_SENDER")
@@ -62,6 +104,22 @@ def send_email(recipient_email, subject, text_content):
             "Missing BREVO_API_KEY or MAIL_DEFAULT_SENDER environment variable."
         )
 
+    html_content, logo_content = build_branded_email(subject, text_content)
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": recipient_email}],
+        "subject": subject,
+        "textContent": text_content,
+        "htmlContent": html_content,
+    }
+    if logo_content:
+        payload["attachment"] = [{
+            "content": logo_content,
+            "name": "basureport-logo.png",
+            "contentId": "basureport-logo",
+            "disposition": "inline",
+        }]
+
     response = requests.post(
         BREVO_API_URL,
         headers={
@@ -69,12 +127,7 @@ def send_email(recipient_email, subject, text_content):
             "accept": "application/json",
             "content-type": "application/json",
         },
-        json={
-            "sender": {"name": sender_name, "email": sender_email},
-            "to": [{"email": recipient_email}],
-            "subject": subject,
-            "textContent": text_content,
-        },
+        json=payload,
         timeout=20,
     )
 
